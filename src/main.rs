@@ -1,46 +1,459 @@
-use rand::Rng;
-use std::io;
+use rand::{
+    distributions::{Distribution, Standard},
+    Rng,
+};
+use std::{collections::HashMap, hash::Hash, io};
 
-fn main() {
-    println!("Guess the number!");
+#[derive(Debug)]
+struct Nation {
+    name: String,
+    player: String,
+    evolutions: Evolutions,
+    mechs: Mechs,
+    buildings: Buildings,
+    recruits: Recruits,
+    coins: i32,
+    military: Military,
+    popularity: Popularity,
+    resources: Resources,
+    fields: i32,
+    turns: i32,
+}
 
-    let secret_number = rand::thread_rng().gen_range(1..=100);
+impl Nation {
+    fn new(name: &str, player: &str) -> Nation {
+        Nation {
+            name: String::from(name),
+            player: String::from(player),
+            evolutions: Evolutions::new(),
+            mechs: Mechs::new(),
+            buildings: Buildings::new(),
+            recruits: Recruits::new(),
+            coins: 5,
+            military: Military::new(2),
+            popularity: Popularity::new(3),
+            resources: Resources::new(),
+            fields: 2,
+            turns: 0,
+        }
+    }
 
-    loop {
-        let guess = get_guess();
+    fn stars(&self) -> i32 {
+        let mut stars = 0;
+        if self.evolutions.star {
+            stars += 1;
+        }
+        if self.mechs.star {
+            stars += 1;
+        }
+        if self.buildings.star {
+            stars += 1;
+        }
+        if self.recruits.star {
+            stars += 1;
+        }
+        if self.military.star {
+            stars += 1;
+        }
+        if self.popularity.star {
+            stars += 1;
+        }
+        stars
+    }
 
-        match guess.cmp(&secret_number) {
-            std::cmp::Ordering::Less => println!("Your guess of {guess} is too small!"),
-            std::cmp::Ordering::Equal => {
-                println!("You win! The secret number was indeed {secret_number}!");
-                break;
-            }
-            std::cmp::Ordering::Greater => println!("Your guess of {guess} is too big!"),
+    fn has_won(&self) -> bool {
+        self.stars() >= 6
+    }
+
+    fn total_coins(&self) -> i32 {
+        self.coins
+            + self.stars() * self.popularity.star_multiplier()
+            + self.fields * self.popularity.fields_multiplier()
+            + self.resources.total() / 2 * self.popularity.resources_multiplier()
+    }
+}
+
+#[derive(Debug)]
+struct Popularity {
+    popularity: i32,
+    star: bool,
+}
+
+impl Popularity {
+    fn new(popularity: i32) -> Popularity {
+        Popularity {
+            popularity,
+            star: false,
+        }
+    }
+
+    fn add(&mut self, popularity: i32) {
+        self.set(self.popularity + popularity);
+    }
+
+    fn set(&mut self, popularity: i32) {
+        self.popularity = popularity;
+        if self.popularity >= 18 {
+            self.popularity = 18;
+            self.star = true;
+        }
+        if self.popularity < 0 {
+            self.popularity = 0;
+        }
+    }
+
+    fn star_multiplier(&self) -> i32 {
+        if self.popularity < 7 {
+            3
+        } else if self.popularity < 14 {
+            4
+        } else {
+            5
+        }
+    }
+
+    fn fields_multiplier(&self) -> i32 {
+        if self.popularity < 7 {
+            2
+        } else if self.popularity < 14 {
+            3
+        } else {
+            4
+        }
+    }
+
+    fn resources_multiplier(&self) -> i32 {
+        if self.popularity < 7 {
+            1
+        } else if self.popularity < 14 {
+            2
+        } else {
+            3
         }
     }
 }
 
-fn get_guess() -> i32 {
-    println!("Please input your guess:");
-    loop {
-        let mut guess = String::new();
-        io::stdin()
-            .read_line(&mut guess)
-            .expect("Failed to read the line!");
+#[derive(Debug)]
+struct Resources {
+    resources: HashMap<Resource, i32>,
+}
 
-        let guess_parsed = match guess.trim().parse::<i32>() {
-            Ok(num) => num,
-            Err(_) => {
-                println!("Not an integer number. Try again:");
-                continue;
-            }
-        };
-
-        if guess_parsed < 1 || guess_parsed > 100 {
-            println!("The number is out of range. Try again:");
-            continue;
-        }
-
-        return guess_parsed;
+impl Resources {
+    fn new() -> Resources {
+        let mut resources = HashMap::new();
+        resources.insert(Resource::Wood, 0);
+        resources.insert(Resource::Metal, 0);
+        resources.insert(Resource::Oil, 0);
+        resources.insert(Resource::Food, 0);
+        Resources { resources }
     }
+
+    fn total(&self) -> i32 {
+        self.resources.get(&Resource::Wood).unwrap_or(&0)
+            + self.resources.get(&Resource::Metal).unwrap_or(&0)
+            + self.resources.get(&&Resource::Oil).unwrap_or(&0)
+            + self.resources.get(&Resource::Food).unwrap_or(&0)
+    }
+
+    fn add(&mut self, resource: Resource, amount: i32) {
+        let resource_ref = self.resources.get(&resource).unwrap_or(&0);
+        self.resources.insert(resource, resource_ref + amount);
+    }
+
+    fn available(&self, resource: Resource, amount: i32) -> bool {
+        let resource_ref = self.resources.get(&resource).unwrap_or(&0);
+        *resource_ref >= amount
+    }
+
+    fn reduce(&mut self, resource: Resource, amount: i32) -> bool {
+        let resource_ref = self.resources.get(&resource).unwrap_or(&0);
+        if *resource_ref < amount {
+            return false;
+        }
+        self.resources.insert(resource, resource_ref - amount);
+        true
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
+enum Resource {
+    Wood,
+    Metal,
+    Oil,
+    Food,
+}
+
+impl Distribution<Resource> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Resource {
+        match rng.gen_range(0..=3) {
+            0 => Resource::Wood,
+            1 => Resource::Metal,
+            2 => Resource::Oil,
+            _ => Resource::Food,
+        }
+    }
+}
+
+#[derive(Debug)]
+struct Evolutions {
+    evolutions: i32,
+    star: bool,
+}
+
+impl Evolutions {
+    fn new() -> Evolutions {
+        Evolutions {
+            evolutions: 0,
+            star: false,
+        }
+    }
+
+    fn add(&mut self, evolutions: i32) {
+        self.set(self.evolutions + evolutions);
+    }
+
+    fn is_max(&self) -> bool {
+        self.evolutions >= 6
+    }
+
+    fn set(&mut self, evolutions: i32) {
+        self.evolutions = evolutions;
+        if self.evolutions >= 6 {
+            self.evolutions = 6;
+            self.star = true;
+        }
+        if self.evolutions < 0 {
+            self.evolutions = 0;
+        }
+    }
+}
+
+#[derive(Debug)]
+struct Mechs {
+    mechs: i32,
+    star: bool,
+}
+
+impl Mechs {
+    fn new() -> Mechs {
+        Mechs {
+            mechs: 0,
+            star: false,
+        }
+    }
+
+    fn add(&mut self, mechs: i32) {
+        self.set(self.mechs + mechs);
+    }
+
+    fn is_max(&self) -> bool {
+        self.mechs >= 4
+    }
+
+    fn set(&mut self, mechs: i32) {
+        self.mechs = mechs;
+        if self.mechs >= 4 {
+            self.mechs = 4;
+            self.star = true;
+        }
+        if self.mechs < 0 {
+            self.mechs = 0;
+        }
+    }
+}
+
+#[derive(Debug)]
+struct Military {
+    power: i32,
+    star: bool,
+}
+
+impl Military {
+    fn new(power: i32) -> Military {
+        Military { power, star: false }
+    }
+
+    fn set(&mut self, power: i32) {
+        self.power = power;
+        if self.power >= 16 {
+            self.power = 16;
+            self.star = true;
+        }
+        if self.power < 0 {
+            self.power = 0;
+        }
+    }
+}
+
+#[derive(Debug)]
+struct Buildings {
+    buildings: i32,
+    star: bool,
+}
+
+impl Buildings {
+    fn new() -> Buildings {
+        Buildings {
+            buildings: 0,
+            star: false,
+        }
+    }
+
+    fn add(&mut self, buildings: i32) {
+        self.set(self.buildings + buildings);
+    }
+
+    fn is_max(&self) -> bool {
+        self.buildings >= 4
+    }
+
+    fn set(&mut self, buildings: i32) {
+        self.buildings = buildings;
+        if self.buildings >= 4 {
+            self.buildings = 4;
+            self.star = true;
+        }
+        if self.buildings < 0 {
+            self.buildings = 0;
+        }
+    }
+}
+
+#[derive(Debug)]
+struct Recruits {
+    recruits: i32,
+    star: bool,
+}
+
+impl Recruits {
+    fn new() -> Recruits {
+        Recruits {
+            recruits: 0,
+            star: false,
+        }
+    }
+
+    fn is_max(&self) -> bool {
+        self.recruits >= 4
+    }
+
+    fn add(&mut self, recruits: i32) {
+        self.set(self.recruits + recruits);
+    }
+
+    fn set(&mut self, recruits: i32) {
+        self.recruits = recruits;
+        if self.recruits >= 4 {
+            self.recruits = 4;
+            self.star = true;
+        }
+        if self.recruits < 0 {
+            self.recruits = 0;
+        }
+    }
+}
+
+#[derive(Debug)]
+enum Action {
+    Move,
+    Produce,
+    Trade,
+    Empower,
+}
+
+impl Distribution<Action> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Action {
+        match rng.gen_range(0..=3) {
+            0 => Action::Move,
+            1 => Action::Produce,
+            2 => Action::Trade,
+            _ => Action::Empower,
+        }
+    }
+}
+
+fn main() {
+    println!("Welcome to scythe statistics!");
+
+    let mut nation = Nation::new("Rusviet", "Joey");
+
+    while !nation.has_won() {
+        let choice = rand::random::<Action>();
+
+        //println!("Turn: {} == Action: {:?}", nation.turns, choice);
+        //println!("{nation:?}");
+
+        //let mut input = String::new();
+        //io::stdin()
+        //.read_line(&mut input)
+        //.expect("Failed to read the line!");
+
+        match choice {
+            Action::Move => {
+                match rand::thread_rng().gen_range(0..2) {
+                    0 => {
+                        nation.fields += 1;
+                    }
+                    1 => {
+                        nation.coins += 2;
+                    }
+                    _ => panic!("Invalid execution path in trade action"),
+                }
+
+                nation.turns += 1;
+
+                if !nation.evolutions.is_max() && nation.resources.reduce(Resource::Food, 3) {
+                    nation.evolutions.add(1);
+                }
+            }
+            Action::Produce => {
+                nation.resources.add(rand::random::<Resource>(), 2);
+
+                nation.turns += 1;
+
+                if !nation.mechs.is_max() && nation.resources.reduce(Resource::Metal, 3) {
+                    nation.mechs.add(1);
+                }
+            }
+            Action::Trade => {
+                if nation.coins <= 0 {
+                    continue;
+                }
+
+                nation.coins -= 1;
+
+                match rand::thread_rng().gen_range(0..2) {
+                    0 => {
+                        nation.popularity.add(1);
+                    }
+                    1 => {
+                        nation.resources.add(rand::random::<Resource>(), 1);
+                        nation.resources.add(rand::random::<Resource>(), 1);
+                    }
+                    _ => panic!("Invalid execution path in trade action"),
+                }
+
+                nation.turns += 1;
+
+                if !nation.buildings.is_max() && nation.resources.reduce(Resource::Wood, 3) {
+                    nation.buildings.add(1);
+                }
+            }
+            Action::Empower => {
+                nation.military.set(nation.military.power + 2);
+
+                nation.turns += 1;
+
+                if !nation.recruits.is_max() && nation.resources.reduce(Resource::Oil, 3) {
+                    nation.recruits.add(1);
+                }
+            }
+        }
+    }
+
+    println!(
+        "Congratulations! You have won the game in {} turns!",
+        nation.turns
+    );
+    println!("{nation:?}");
 }
