@@ -1,8 +1,9 @@
+use std::io;
+
 use rand::{
     distributions::{Distribution, Standard},
     Rng,
 };
-use std::{collections::HashMap, hash::Hash, io};
 
 #[derive(Debug)]
 struct Nation {
@@ -352,21 +353,64 @@ impl Recruits {
 }
 
 #[derive(Debug)]
-enum Action {
+enum PrimaryAction {
     Move,
+    Tax,
     Produce,
     Trade,
-    Empower,
+    Promote,
+    Bolster,
 }
 
-impl Distribution<Action> for Standard {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Action {
-        match rng.gen_range(0..=3) {
-            0 => Action::Move,
-            1 => Action::Produce,
-            2 => Action::Trade,
-            _ => Action::Empower,
+trait Agent {
+    fn prepare(&self, nation: &Nation);
+    fn choose_primary(&self) -> PrimaryAction;
+    fn do_evolution(&self) -> bool;
+    fn do_mech(&self) -> bool;
+    fn do_building(&self) -> bool;
+    fn do_recruit(&self) -> bool;
+    fn choose_trade(&self) -> Resource;
+    fn choose_produce(&self) -> Resource;
+}
+
+struct RandomAgent {}
+
+impl Agent for RandomAgent {
+    fn prepare(&self, _nation: &Nation) {}
+
+    fn choose_primary(&self) -> PrimaryAction {
+        match rand::thread_rng().gen_range(0..=5) {
+            0 => PrimaryAction::Move,
+            1 => PrimaryAction::Tax,
+            2 => PrimaryAction::Produce,
+            3 => PrimaryAction::Trade,
+            4 => PrimaryAction::Promote,
+            _ => PrimaryAction::Bolster,
         }
+    }
+
+    fn do_evolution(&self) -> bool {
+        true
+    }
+
+    fn do_mech(&self) -> bool {
+        true
+    }
+
+    fn do_building(&self) -> bool {
+        true
+    }
+
+    fn do_recruit(&self) -> bool {
+        true
+    }
+
+    fn choose_trade(&self) -> Resource {
+        rand::random::<Resource>()
+    }
+
+    fn choose_produce(&self) -> Resource {
+        rand::random::<Resource>()
     }
 }
 
@@ -374,79 +418,90 @@ fn main() {
     println!("Welcome to scythe statistics!");
 
     let mut nation = Nation::new("Rusviet", "Joey");
+    let agent = RandomAgent {};
 
     while !nation.has_won() {
-        let choice = rand::random::<Action>();
+        agent.prepare(&nation);
 
-        //println!("Turn: {} == Action: {:?}", nation.turns, choice);
-        //println!("{nation:?}");
+        let choice = agent.choose_primary();
+        /*
+        println!("Turn: {} == Action: {:?}", nation.turns, choice);
+        println!("{nation:?}");
 
-        //let mut input = String::new();
-        //io::stdin()
-        //.read_line(&mut input)
-        //.expect("Failed to read the line!");
-
+        let mut input = String::new();
+        io::stdin()
+            .read_line(&mut input)
+            .expect("Failed to read the line!");
+        */
         match choice {
-            Action::Move => {
-                match rand::thread_rng().gen_range(0..2) {
-                    0 => {
-                        nation.fields += 1;
-                    }
-                    1 => {
-                        nation.coins += 2;
-                    }
-                    _ => panic!("Invalid execution path in trade action"),
-                }
+            PrimaryAction::Move => {
+                nation.fields += 1;
 
                 nation.turns += 1;
 
-                if !nation.evolutions.is_max() && nation.resources.food >= 3 {
-                    nation.resources.food -= 3;
+                if nation.resources.oil >= 3 && agent.do_evolution() {
+                    nation.resources.oil -= 3;
                     nation.evolutions.add(1);
                 }
             }
-            Action::Produce => {
-                nation.resources.add(rand::random::<Resource>(), 2);
+            PrimaryAction::Tax => {
+                nation.coins += 3;
 
                 nation.turns += 1;
 
-                if !nation.mechs.is_max() && nation.resources.metal >= 3 {
+                if nation.resources.oil >= 3 && agent.do_evolution() {
+                    nation.resources.oil -= 3;
+                    nation.evolutions.add(1);
+                }
+            }
+            PrimaryAction::Produce => {
+                nation.resources.add(agent.choose_produce(), 2);
+
+                nation.turns += 1;
+
+                if nation.resources.metal >= 3 && agent.do_mech() {
                     nation.resources.metal -= 3;
                     nation.mechs.add(1);
                 }
             }
-            Action::Trade => {
+            PrimaryAction::Trade => {
                 if nation.coins <= 0 {
                     continue;
                 }
 
                 nation.coins -= 1;
-
-                match rand::thread_rng().gen_range(0..2) {
-                    0 => {
-                        nation.popularity.add(1);
-                    }
-                    1 => {
-                        nation.resources.add(rand::random::<Resource>(), 1);
-                        nation.resources.add(rand::random::<Resource>(), 1);
-                    }
-                    _ => panic!("Invalid execution path in trade action"),
-                }
+                nation.resources.add(agent.choose_trade(), 1);
+                nation.resources.add(agent.choose_trade(), 1);
 
                 nation.turns += 1;
 
-                if !nation.buildings.is_max() && nation.resources.wood >= 3 {
+                if nation.resources.wood >= 3 && agent.do_building() {
                     nation.resources.wood -= 3;
                     nation.buildings.add(1);
                 }
             }
-            Action::Empower => {
+            PrimaryAction::Promote => {
+                if nation.coins <= 0 {
+                    continue;
+                }
+
+                nation.coins -= 1;
+                nation.popularity.add(1);
+
+                nation.turns += 1;
+
+                if nation.resources.wood >= 3 && agent.do_building() {
+                    nation.resources.wood -= 3;
+                    nation.buildings.add(1);
+                }
+            }
+            PrimaryAction::Bolster => {
                 nation.military.set(nation.military.power + 2);
 
                 nation.turns += 1;
 
-                if !nation.recruits.is_max() && nation.resources.oil >= 3 {
-                    nation.resources.oil -= 3;
+                if nation.resources.food >= 3 && agent.do_recruit() {
+                    nation.resources.food -= 3;
                     nation.recruits.add(1);
                 }
             }
@@ -454,8 +509,10 @@ fn main() {
     }
 
     println!(
-        "Congratulations! You have won the game in {} turns!",
-        nation.turns
+        "Congratulations! You have won the game in {} turns! {} has scored {} coins!",
+        nation.turns,
+        nation.name,
+        nation.total_coins()
     );
     println!("{nation:?}");
 }
