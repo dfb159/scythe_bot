@@ -135,43 +135,41 @@ impl Popularity {
 
 #[derive(Debug)]
 struct Resources {
-    resources: HashMap<Resource, i32>,
+    wood: i32,
+    metal: i32,
+    oil: i32,
+    food: i32,
 }
 
 impl Resources {
     fn new() -> Resources {
-        let mut resources = HashMap::new();
-        resources.insert(Resource::Wood, 0);
-        resources.insert(Resource::Metal, 0);
-        resources.insert(Resource::Oil, 0);
-        resources.insert(Resource::Food, 0);
-        Resources { resources }
+        Resources {
+            wood: 0,
+            metal: 0,
+            oil: 0,
+            food: 0,
+        }
     }
 
     fn total(&self) -> i32 {
-        self.resources.get(&Resource::Wood).unwrap_or(&0)
-            + self.resources.get(&Resource::Metal).unwrap_or(&0)
-            + self.resources.get(&&Resource::Oil).unwrap_or(&0)
-            + self.resources.get(&Resource::Food).unwrap_or(&0)
+        self.wood + self.metal + self.oil + self.food
     }
 
     fn add(&mut self, resource: Resource, amount: i32) {
-        let resource_ref = self.resources.get(&resource).unwrap_or(&0);
-        self.resources.insert(resource, resource_ref + amount);
-    }
-
-    fn available(&self, resource: Resource, amount: i32) -> bool {
-        let resource_ref = self.resources.get(&resource).unwrap_or(&0);
-        *resource_ref >= amount
-    }
-
-    fn reduce(&mut self, resource: Resource, amount: i32) -> bool {
-        let resource_ref = self.resources.get(&resource).unwrap_or(&0);
-        if *resource_ref < amount {
-            return false;
+        match resource {
+            Resource::Wood => {
+                self.wood += amount;
+            }
+            Resource::Metal => {
+                self.metal += amount;
+            }
+            Resource::Oil => {
+                self.oil += amount;
+            }
+            Resource::Food => {
+                self.food += amount;
+            }
         }
-        self.resources.insert(resource, resource_ref - amount);
-        true
     }
 }
 
@@ -402,7 +400,8 @@ fn main() {
 
                 nation.turns += 1;
 
-                if !nation.evolutions.is_max() && nation.resources.reduce(Resource::Food, 3) {
+                if !nation.evolutions.is_max() && nation.resources.food >= 3 {
+                    nation.resources.food -= 3;
                     nation.evolutions.add(1);
                 }
             }
@@ -411,7 +410,8 @@ fn main() {
 
                 nation.turns += 1;
 
-                if !nation.mechs.is_max() && nation.resources.reduce(Resource::Metal, 3) {
+                if !nation.mechs.is_max() && nation.resources.metal >= 3 {
+                    nation.resources.metal -= 3;
                     nation.mechs.add(1);
                 }
             }
@@ -435,7 +435,8 @@ fn main() {
 
                 nation.turns += 1;
 
-                if !nation.buildings.is_max() && nation.resources.reduce(Resource::Wood, 3) {
+                if !nation.buildings.is_max() && nation.resources.wood >= 3 {
+                    nation.resources.wood -= 3;
                     nation.buildings.add(1);
                 }
             }
@@ -444,7 +445,8 @@ fn main() {
 
                 nation.turns += 1;
 
-                if !nation.recruits.is_max() && nation.resources.reduce(Resource::Oil, 3) {
+                if !nation.recruits.is_max() && nation.resources.oil >= 3 {
+                    nation.resources.oil -= 3;
                     nation.recruits.add(1);
                 }
             }
