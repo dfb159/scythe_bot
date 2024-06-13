@@ -1,5 +1,5 @@
 use rand::{seq::IteratorRandom, Rng};
-use std::cmp::min;
+use std::{cmp::min, io};
 
 #[derive(Debug)]
 struct PlayerState {
@@ -34,20 +34,22 @@ impl PlayerState {
             faction_name: faction.name.clone(),
             playstyle_name: player_mat.name.clone(),
 
-            move_secondary: player_mat.move_secondary.clone(),
-            trade_secondary: player_mat.trade_secondary.clone(),
-            produce_secondary: player_mat.produce_secondary.clone(),
-            bolster_secondary: player_mat.bolster_secondary.clone(),
+            move_secondary: player_mat.move_secondary,
+            trade_secondary: player_mat.trade_secondary,
+            produce_secondary: player_mat.produce_secondary,
+            bolster_secondary: player_mat.bolster_secondary,
 
             upgrades: UpgradesState::new(&player_mat),
             mechs: MechsState::new(),
             buildings: BuildingsState::new(),
             recruits: RecruitsState::new(),
-            military: MilitaryState::new(2),
-            popularity: PopularityState::new(3),
+            military: MilitaryState::new(faction.starting_power + player.bonus_starting_power),
+            popularity: PopularityState::new(
+                player_mat.starting_popularity + player.bonus_starting_popularity,
+            ),
             production: ProductionState::new(
-                &faction.first_starting_field,
-                &faction.second_starting_field,
+                faction.first_starting_field,
+                faction.second_starting_field,
             ),
 
             resources: ResourcesState::new(),
@@ -82,15 +84,15 @@ impl PlayerState {
             + self.resources.total() / 2 * self.popularity.resources_multiplier()
     }
 
-    fn get_secondary(&self, primary: &PrimaryAction) -> &SecondaryAction {
+    fn get_secondary(&self, primary: PrimaryAction) -> SecondaryAction {
         match primary {
-            PrimaryAction::Move => &self.move_secondary,
-            PrimaryAction::Tax => &self.move_secondary,
-            PrimaryAction::Trade => &self.trade_secondary,
-            PrimaryAction::Promote => &self.trade_secondary,
-            PrimaryAction::Bolster => &self.bolster_secondary,
-            PrimaryAction::Enforce => &self.bolster_secondary,
-            PrimaryAction::Produce => &self.produce_secondary,
+            PrimaryAction::Move => self.move_secondary,
+            PrimaryAction::Tax => self.move_secondary,
+            PrimaryAction::Trade => self.trade_secondary,
+            PrimaryAction::Promote => self.trade_secondary,
+            PrimaryAction::Bolster => self.bolster_secondary,
+            PrimaryAction::Enforce => self.bolster_secondary,
+            PrimaryAction::Produce => self.produce_secondary,
         }
     }
 
@@ -164,7 +166,7 @@ struct ProductionState {
 }
 
 impl ProductionState {
-    fn new(first_field: &Resource, second_field: &Resource) -> ProductionState {
+    fn new(first_field: Resource, second_field: Resource) -> ProductionState {
         let mut state = ProductionState {
             wood: 0,
             metal: 0,
@@ -179,7 +181,7 @@ impl ProductionState {
         state
     }
 
-    fn add(&mut self, resource: &Resource, amount: i32) {
+    fn add(&mut self, resource: Resource, amount: i32) {
         let reduced = min(amount, 8 - self.total());
 
         match resource {
@@ -201,7 +203,7 @@ impl ProductionState {
         }
     }
 
-    fn get(&self, resource: &Resource) -> i32 {
+    fn get(&self, resource: Resource) -> i32 {
         match resource {
             Resource::Wood => self.wood,
             Resource::Metal => self.metal,
@@ -298,7 +300,7 @@ impl ResourcesState {
         self.wood + self.metal + self.oil + self.food
     }
 
-    fn add(&mut self, resource: &Resource, amount: i32) {
+    fn add(&mut self, resource: Resource, amount: i32) {
         match resource {
             Resource::Wood => {
                 self.wood += amount;
@@ -317,7 +319,7 @@ impl ResourcesState {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 enum Resource {
     Wood,
     Metal,
@@ -326,6 +328,7 @@ enum Resource {
     People,
 }
 
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 enum Upgrade {
     Popularity,
     Power,
@@ -387,7 +390,7 @@ impl UpgradesState {
         }
     }
 
-    fn upgrade(&mut self, primary: &Upgrade, secondary: &SecondaryAction) {
+    fn upgrade(&mut self, primary: Upgrade, secondary: SecondaryAction) {
         match primary {
             Upgrade::Popularity => {
                 self.popularity_evolved = true;
@@ -441,11 +444,11 @@ impl UpgradesState {
         }
     }
 
-    fn can_upgrade(&self, primary: &Upgrade, secondary: &SecondaryAction) -> bool {
+    fn can_upgrade(&self, primary: Upgrade, secondary: SecondaryAction) -> bool {
         self.can_upgrade_primary(primary) && self.can_upgrade_secondary(secondary)
     }
 
-    fn can_upgrade_primary(&self, primary: &Upgrade) -> bool {
+    fn can_upgrade_primary(&self, primary: Upgrade) -> bool {
         match primary {
             Upgrade::Popularity => !self.popularity_evolved,
             Upgrade::Power => !self.power_evolved,
@@ -456,7 +459,7 @@ impl UpgradesState {
         }
     }
 
-    fn can_upgrade_secondary(&self, secondary: &SecondaryAction) -> bool {
+    fn can_upgrade_secondary(&self, secondary: SecondaryAction) -> bool {
         match secondary {
             SecondaryAction::Upgrade => self.upgrade_evolution_cost > 0,
             SecondaryAction::Deploy => self.deploy_evolution_cost > 0,
@@ -465,7 +468,7 @@ impl UpgradesState {
         }
     }
 
-    fn get_upgrade_cost(&self, secondary: &SecondaryAction) -> i32 {
+    fn get_upgrade_cost(&self, secondary: SecondaryAction) -> i32 {
         match secondary {
             SecondaryAction::Upgrade => self.upgrade_base_cost + self.upgrade_evolution_cost,
             SecondaryAction::Deploy => self.deploy_base_cost + self.deploy_evolution_cost,
@@ -474,7 +477,7 @@ impl UpgradesState {
         }
     }
 
-    fn get_upgrade_coins(&self, secondary: &SecondaryAction) -> i32 {
+    fn get_upgrade_coins(&self, secondary: SecondaryAction) -> i32 {
         match secondary {
             SecondaryAction::Upgrade => self.upgrade_coins,
             SecondaryAction::Deploy => self.deploy_coins,
@@ -484,6 +487,7 @@ impl UpgradesState {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 enum Mech {
     First,
     Second,
@@ -511,7 +515,7 @@ impl MechsState {
         }
     }
 
-    fn deploy(&mut self, mech: &Mech) {
+    fn deploy(&mut self, mech: Mech) {
         match mech {
             Mech::First => {
                 self.first_deployed = true;
@@ -535,7 +539,7 @@ impl MechsState {
         }
     }
 
-    fn can_deploy(&self, mech: &Mech) -> bool {
+    fn can_deploy(&self, mech: Mech) -> bool {
         match mech {
             Mech::First => !self.first_deployed,
             Mech::Second => !self.second_deployed,
@@ -572,6 +576,7 @@ impl MilitaryState {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 enum Building {
     Mine,
     Mill,
@@ -605,7 +610,7 @@ impl BuildingsState {
         }
     }
 
-    fn build(&mut self, building: &Building) {
+    fn build(&mut self, building: Building) {
         match building {
             Building::Mine => {
                 self.mine_build = true;
@@ -625,7 +630,7 @@ impl BuildingsState {
         }
     }
 
-    fn can_build(&self, building: &Building) -> bool {
+    fn can_build(&self, building: Building) -> bool {
         match building {
             Building::Mine => !self.mine_build,
             Building::Mill => !self.mill_build,
@@ -635,6 +640,7 @@ impl BuildingsState {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 enum Recruit {
     Military,
     Coin,
@@ -674,7 +680,7 @@ impl RecruitsState {
         }
     }
 
-    fn recruit(&mut self, secondary: &Recruit, onetime: &Recruit) {
+    fn recruit(&mut self, secondary: Recruit, onetime: Recruit) {
         match secondary {
             Recruit::Military => {
                 self.secondary_military_recruited = true;
@@ -716,11 +722,11 @@ impl RecruitsState {
         }
     }
 
-    fn can_recruit(&self, secondary: &Recruit, onetime: &Recruit) -> bool {
+    fn can_recruit(&self, secondary: Recruit, onetime: Recruit) -> bool {
         !self.is_secondary_recruited(secondary) && !self.is_onetime_recruited(onetime)
     }
 
-    fn is_secondary_recruited(&self, secondary: &Recruit) -> bool {
+    fn is_secondary_recruited(&self, secondary: Recruit) -> bool {
         match secondary {
             Recruit::Military => self.secondary_military_recruited,
             Recruit::Coin => self.secondary_coin_recruited,
@@ -729,7 +735,7 @@ impl RecruitsState {
         }
     }
 
-    fn is_onetime_recruited(&self, onetime: &Recruit) -> bool {
+    fn is_onetime_recruited(&self, onetime: Recruit) -> bool {
         match onetime {
             Recruit::Military => self.onetime_military_recruited,
             Recruit::Coin => self.onetime_coin_recruited,
@@ -739,7 +745,7 @@ impl RecruitsState {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 enum PrimaryAction {
     Move,
     Tax,
@@ -750,22 +756,13 @@ enum PrimaryAction {
     Produce,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 enum SecondaryAction {
     Upgrade,
     Deploy,
+
     Build,
     Enlist,
-}
-impl SecondaryAction {
-    fn clone(&self) -> SecondaryAction {
-        match self {
-            SecondaryAction::Upgrade => SecondaryAction::Upgrade,
-            SecondaryAction::Deploy => SecondaryAction::Deploy,
-            SecondaryAction::Build => SecondaryAction::Build,
-            SecondaryAction::Enlist => SecondaryAction::Enlist,
-        }
-    }
 }
 
 trait Agent {
@@ -787,7 +784,7 @@ impl Agent for RandomAgent {
     fn prepare(&self, _state: &PlayerState) {}
 
     fn choose_primary(&self, state: &PlayerState) -> PrimaryAction {
-        let mut choice = Vec::with_capacity(6);
+        let mut choice = Vec::with_capacity(7);
         if state.can_produce() {
             choice.push(PrimaryAction::Produce);
         }
@@ -831,7 +828,7 @@ impl Agent for RandomAgent {
             Resource::People,
         ]
         .into_iter()
-        .filter(|resource| state.production.get(resource) > 0)
+        .filter(|resource| state.production.get(*resource) > 0)
         .choose(&mut rand::thread_rng());
 
         let to = match rand::thread_rng().gen_range(0..=4) {
@@ -858,7 +855,7 @@ impl Agent for RandomAgent {
             Upgrade::Produce,
         ]
         .into_iter()
-        .filter(|upgrade| state.upgrades.can_upgrade_primary(upgrade))
+        .filter(|upgrade| state.upgrades.can_upgrade_primary(*upgrade))
         .choose(&mut rand::thread_rng());
 
         let secondary_list = vec![
@@ -868,7 +865,7 @@ impl Agent for RandomAgent {
             SecondaryAction::Enlist,
         ]
         .into_iter()
-        .filter(|secondary| state.upgrades.can_upgrade_secondary(secondary))
+        .filter(|secondary| state.upgrades.can_upgrade_secondary(*secondary))
         .choose(&mut rand::thread_rng());
 
         match (primary_list, secondary_list) {
@@ -880,7 +877,7 @@ impl Agent for RandomAgent {
     fn deploy(&self, state: &PlayerState) -> Option<Mech> {
         let mech_list = vec![Mech::First, Mech::Second, Mech::Third, Mech::Fourth]
             .into_iter()
-            .filter(|mech| state.mechs.can_deploy(mech))
+            .filter(|mech| state.mechs.can_deploy(*mech))
             .choose(&mut rand::thread_rng());
 
         match mech_list {
@@ -897,7 +894,7 @@ impl Agent for RandomAgent {
             Building::Monument,
         ]
         .into_iter()
-        .filter(|building| state.buildings.can_build(building))
+        .filter(|building| state.buildings.can_build(*building))
         .choose(&mut rand::thread_rng());
 
         match building_list {
@@ -924,7 +921,7 @@ impl Agent for RandomAgent {
             Recruit::Card,
         ]
         .into_iter()
-        .filter(|recruit| state.recruits.is_secondary_recruited(recruit))
+        .filter(|recruit| !state.recruits.is_secondary_recruited(*recruit))
         .choose(&mut rand::thread_rng());
 
         let onetime_list = vec![
@@ -934,7 +931,7 @@ impl Agent for RandomAgent {
             Recruit::Card,
         ]
         .into_iter()
-        .filter(|recruit| state.recruits.is_onetime_recruited(recruit))
+        .filter(|recruit| !state.recruits.is_onetime_recruited(*recruit))
         .choose(&mut rand::thread_rng());
 
         match (secondary_list, onetime_list) {
@@ -988,7 +985,7 @@ fn main() {
     let mut state = PlayerState::new(&joey, &rusviet, &player_mat);
     let agent = RandomAgent {};
 
-    while !state.has_won() {
+    while state.turns <= 500 && !state.has_won() {
         turn(&mut state, &agent);
     }
 
@@ -1002,28 +999,28 @@ fn main() {
 }
 
 fn turn(state: &mut PlayerState, agent: &impl Agent) {
-    /*
-    println!("Turn: {} == Action: {:?}", nation.turns, choice);
-    println!("{nation:?}");
-
-    let mut input = String::new();
-    io::stdin()
-        .read_line(&mut input)
-        .expect("Failed to read the line!");
-    */
-
     agent.prepare(state);
 
     let choice = agent.choose_primary(state);
-    execute_primary(state, agent, &choice);
+    execute_primary(state, agent, choice);
 
     state.turns += 1;
 
-    let secondary = state.get_secondary(&choice);
-    execute_secondary(state, agent, &secondary);
+    let secondary = state.get_secondary(choice);
+    execute_secondary(state, agent, secondary);
+
+    println!("Turn: {} == Action: {:?}", state.turns, choice);
+    //println!("{state:#?}");
+    //println!("Turn: {} == Action: {:?}", state.turns, choice);
+    //println!();
+    //
+    //let mut input = String::new();
+    //io::stdin()
+    //    .read_line(&mut input)
+    //    .expect("Failed to read the line!");
 }
 
-fn execute_primary(state: &mut PlayerState, agent: &impl Agent, primary: &PrimaryAction) {
+fn execute_primary(state: &mut PlayerState, agent: &impl Agent, primary: PrimaryAction) {
     match primary {
         PrimaryAction::Move => {
             move_people(state, agent.choose_move(state));
@@ -1037,8 +1034,8 @@ fn execute_primary(state: &mut PlayerState, agent: &impl Agent, primary: &Primar
         }
         PrimaryAction::Trade if state.coins >= 1 => {
             state.coins -= 1;
-            state.resources.add(&agent.choose_trade(state), 1);
-            state.resources.add(&agent.choose_trade(state), 1);
+            state.resources.add(agent.choose_trade(state), 1);
+            state.resources.add(agent.choose_trade(state), 1);
             if state.buildings.armory_build {
                 state.military.add(1);
             }
@@ -1087,14 +1084,14 @@ fn execute_primary(state: &mut PlayerState, agent: &impl Agent, primary: &Primar
                 state.coins -= 1
             }
 
-            produce_resource(state, &agent.choose_produce(state));
-            produce_resource(state, &agent.choose_produce(state));
+            produce_resource(state, agent.choose_produce(state));
+            produce_resource(state, agent.choose_produce(state));
 
             if state.upgrades.produce_evolved {
-                produce_resource(state, &agent.choose_produce(state));
+                produce_resource(state, agent.choose_produce(state));
             }
 
-            match &state.buildings.mill_location {
+            match state.buildings.mill_location {
                 Some(location) => {
                     produce_resource(state, location);
                 }
@@ -1109,20 +1106,20 @@ fn execute_primary(state: &mut PlayerState, agent: &impl Agent, primary: &Primar
 
 fn move_people(state: &mut PlayerState, dest: Option<(Resource, Resource)>) {
     match dest {
-        Some((from, to)) if state.production.get(&from) > 0 => {
-            state.production.add(&from, -1);
-            state.production.add(&to, 1);
+        Some((from, to)) if state.production.get(from) > 0 => {
+            state.production.add(from, -1);
+            state.production.add(to, 1);
         }
         _ => {}
     }
 }
 
-fn produce_resource(state: &mut PlayerState, resource: &Resource) {
+fn produce_resource(state: &mut PlayerState, resource: Resource) {
     match resource {
         Resource::People => {
             state
                 .production
-                .add(&Resource::People, state.production.population);
+                .add(Resource::People, state.production.population);
         }
         _ => {
             state
@@ -1132,59 +1129,59 @@ fn produce_resource(state: &mut PlayerState, resource: &Resource) {
     }
 }
 
-fn execute_secondary(state: &mut PlayerState, agent: &impl Agent, secondary: &SecondaryAction) {
+fn execute_secondary(state: &mut PlayerState, agent: &impl Agent, secondary: SecondaryAction) {
     let cost = state.upgrades.get_upgrade_cost(secondary);
     match secondary {
         SecondaryAction::Upgrade if state.resources.oil >= cost => match agent.upgrade(state) {
             Some((primary, secondary)) => {
-                if state.recruits.is_secondary_recruited(&Recruit::Military) {
+                if state.recruits.is_secondary_recruited(Recruit::Military) {
                     state.military.add(1);
                 }
                 state.resources.oil -= cost;
-                state.upgrades.upgrade(&primary, &secondary);
-                state.coins += state.upgrades.get_upgrade_coins(&SecondaryAction::Upgrade);
+                state.upgrades.upgrade(primary, secondary);
+                state.coins += state.upgrades.get_upgrade_coins(SecondaryAction::Upgrade);
             }
             _ => {}
         },
         SecondaryAction::Deploy if state.resources.metal >= cost => match agent.deploy(state) {
             Some(mech) => {
-                if state.recruits.is_secondary_recruited(&Recruit::Coin) {
+                if state.recruits.is_secondary_recruited(Recruit::Coin) {
                     state.coins += 1;
                 }
                 state.resources.metal -= cost;
-                state.mechs.deploy(&mech);
-                state.coins += state.upgrades.get_upgrade_coins(&SecondaryAction::Deploy);
+                state.mechs.deploy(mech);
+                state.coins += state.upgrades.get_upgrade_coins(SecondaryAction::Deploy);
             }
             _ => {}
         },
         SecondaryAction::Build if state.resources.wood >= cost => match agent.build(state) {
             Some(Building::Mill) => {
-                if state.recruits.is_secondary_recruited(&Recruit::Popularity) {
+                if state.recruits.is_secondary_recruited(Recruit::Popularity) {
                     state.popularity.add(1);
                 }
                 state.resources.wood -= cost;
-                state.buildings.build(&Building::Mill);
+                state.buildings.build(Building::Mill);
                 state.buildings.mill_location = Some(agent.choose_mill_location(state));
-                state.coins += state.upgrades.get_upgrade_coins(&SecondaryAction::Build);
+                state.coins += state.upgrades.get_upgrade_coins(SecondaryAction::Build);
             }
             Some(building) => {
-                if state.recruits.is_secondary_recruited(&Recruit::Popularity) {
+                if state.recruits.is_secondary_recruited(Recruit::Popularity) {
                     state.popularity.add(1);
                 }
                 state.resources.wood -= cost;
-                state.buildings.build(&building);
-                state.coins += state.upgrades.get_upgrade_coins(&SecondaryAction::Build);
+                state.buildings.build(building);
+                state.coins += state.upgrades.get_upgrade_coins(SecondaryAction::Build);
             }
             _ => {}
         },
         SecondaryAction::Enlist if state.resources.food >= cost => match agent.enlist(state) {
             Some((secondary, onetime)) => {
-                if state.recruits.is_secondary_recruited(&Recruit::Card) {
+                if state.recruits.is_secondary_recruited(Recruit::Card) {
                     state.cards += 1;
                 }
                 state.resources.food -= cost;
-                state.recruits.recruit(&secondary, &onetime);
-                state.coins += state.upgrades.get_upgrade_coins(&SecondaryAction::Enlist);
+                state.recruits.recruit(secondary, onetime);
+                state.coins += state.upgrades.get_upgrade_coins(SecondaryAction::Enlist);
             }
             _ => {}
         },
