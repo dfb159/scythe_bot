@@ -2,7 +2,7 @@ use super::PlayerMat;
 use super::SecondaryAction;
 
 pub const INDUSTRIAL: PlayerMat = PlayerMat {
-    name: "Industrial".to_string(),
+    name: "Industrial",
     starting_index: 1,
     starting_coins: 4,
     starting_popularity: 2,

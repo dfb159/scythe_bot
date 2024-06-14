@@ -1,4 +1,4 @@
-use crate::{campaign::PlayerMat, SecondaryAction};
+use crate::campaign::{PlayerMat, SecondaryAction};
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub(crate) enum Upgrade {

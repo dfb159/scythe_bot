@@ -4,16 +4,16 @@ pub mod player_mat;
 use crate::Resource;
 
 #[derive(Debug)]
-pub(crate) struct Player {
-    pub(crate) name: String,
+pub(crate) struct Player<'a> {
+    pub(crate) name: &'a str,
     pub(crate) bonus_starting_coins: i32,
     pub(crate) bonus_starting_power: i32,
     pub(crate) bonus_starting_popularity: i32,
 }
 
 #[derive(Debug)]
-pub(crate) struct Faction {
-    pub(crate) name: String,
+pub(crate) struct Faction<'a> {
+    pub(crate) name: &'a str,
     pub(crate) starting_power: i32,
     pub(crate) starting_cards: i32,
 
@@ -22,8 +22,8 @@ pub(crate) struct Faction {
 }
 
 #[derive(Debug)]
-pub(crate) struct PlayerMat {
-    pub(crate) name: String,
+pub(crate) struct PlayerMat<'a> {
+    pub(crate) name: &'a str,
     pub(crate) starting_index: i32,
 
     pub(crate) starting_coins: i32,

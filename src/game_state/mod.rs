@@ -7,7 +7,7 @@ use recruits::RecruitsState;
 use resources::ResourcesState;
 use upgrades::UpgradesState;
 
-use crate::campaign::{Faction, Player, PlayerMat};
+use crate::campaign::{Faction, Player, PlayerMat, PrimaryAction, SecondaryAction};
 
 pub mod buildings;
 pub mod mechs;
@@ -19,10 +19,10 @@ pub mod resources;
 pub mod upgrades;
 
 #[derive(Debug)]
-pub(crate) struct PlayerState {
-    pub(crate) player_name: String,
-    pub(crate) faction_name: String,
-    pub(crate) playstyle_name: String,
+pub(crate) struct PlayerState<'a> {
+    pub(crate) player_name: &'a str,
+    pub(crate) faction_name: &'a str,
+    pub(crate) playstyle_name: &'a str,
 
     pub(crate) move_secondary: SecondaryAction, // for move and tax primary actions
     pub(crate) trade_secondary: SecondaryAction, // for trade and promote primary actions
@@ -44,12 +44,16 @@ pub(crate) struct PlayerState {
     pub(crate) turns: i32,
 }
 
-impl PlayerState {
-    pub(crate) fn new(player: &Player, faction: &Faction, player_mat: &PlayerMat) -> PlayerState {
+impl PlayerState<'_> {
+    pub(crate) fn new<'a>(
+        player: &'a Player<'a>,
+        faction: &'a Faction<'a>,
+        player_mat: &'a PlayerMat<'a>,
+    ) -> PlayerState<'a> {
         PlayerState {
-            player_name: player.name.clone(),
-            faction_name: faction.name.clone(),
-            playstyle_name: player_mat.name.clone(),
+            player_name: player.name,
+            faction_name: faction.name,
+            playstyle_name: player_mat.name,
 
             move_secondary: player_mat.move_secondary,
             trade_secondary: player_mat.trade_secondary,
