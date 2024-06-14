@@ -15,7 +15,7 @@ use agent::random::RandomAgent;
 
 use std::io;
 
-const DEBUG: u32 = 1;
+const DEBUG: u32 = 3;
 
 fn main() {
     println!("Welcome to scythe statistics!");
@@ -28,10 +28,10 @@ fn main() {
     };
 
     let mut state = PlayerState::new(&joey, &RUSVIET, &INDUSTRIAL);
-    let agent = RandomAgent {};
+    let mut agent = RandomAgent {};
 
     while state.turns <= 500 && !state.has_won() {
-        let (primary, secondary) = turn(&mut state, &agent);
+        let (primary, secondary) = turn(&mut state, &mut agent);
 
         if DEBUG >= 1 {
             println!(

@@ -6,7 +6,7 @@ use crate::{
 
 pub(crate) fn turn(
     state: &mut PlayerState,
-    agent: &impl Agent,
+    agent: &mut impl Agent,
 ) -> (PrimaryAction, SecondaryAction) {
     agent.prepare(state);
 
@@ -21,7 +21,7 @@ pub(crate) fn turn(
     (choice, secondary)
 }
 
-fn execute_primary(state: &mut PlayerState, agent: &impl Agent, primary: PrimaryAction) {
+fn execute_primary(state: &mut PlayerState, agent: &mut impl Agent, primary: PrimaryAction) {
     match primary {
         PrimaryAction::Move => {
             move_people(state, agent.choose_move(state));
@@ -130,7 +130,7 @@ fn produce_resource(state: &mut PlayerState, resource: Resource) {
     }
 }
 
-fn execute_secondary(state: &mut PlayerState, agent: &impl Agent, secondary: SecondaryAction) {
+fn execute_secondary(state: &mut PlayerState, agent: &mut impl Agent, secondary: SecondaryAction) {
     let cost = state.upgrades.get_upgrade_cost(secondary);
     match secondary {
         SecondaryAction::Upgrade if state.resources.oil >= cost => match agent.upgrade(state) {

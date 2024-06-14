@@ -13,7 +13,7 @@ use super::Agent;
 pub(crate) struct RandomAgent {}
 
 impl Agent for RandomAgent {
-    fn prepare(&self, _state: &PlayerState) {}
+    fn prepare(&mut self, _state: &PlayerState) {}
 
     fn choose_primary(&self, state: &PlayerState) -> PrimaryAction {
         let mut choice = Vec::with_capacity(7);

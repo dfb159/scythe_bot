@@ -1,3 +1,4 @@
+pub(crate) mod human;
 pub(crate) mod random;
 
 use crate::{
@@ -9,7 +10,7 @@ use crate::{
 };
 
 pub(crate) trait Agent {
-    fn prepare(&self, state: &PlayerState);
+    fn prepare(&mut self, state: &PlayerState);
     fn choose_primary(&self, state: &PlayerState) -> PrimaryAction;
     fn choose_trade(&self, state: &PlayerState) -> Resource;
     fn choose_produce(&self, state: &PlayerState) -> Resource;
