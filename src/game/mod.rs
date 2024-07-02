@@ -37,7 +37,7 @@ fn execute_primary(state: &mut PlayerState, agent: &mut impl Agent, primary: Pri
             state.coins -= 1;
             state.resources.add(agent.choose_trade(state), 1);
             state.resources.add(agent.choose_trade(state), 1);
-            if state.buildings.armory_build {
+            if state.buildings.armory_built {
                 state.military.add(1);
             }
         }
@@ -50,7 +50,7 @@ fn execute_primary(state: &mut PlayerState, agent: &mut impl Agent, primary: Pri
             };
             state.popularity.add(popularity_increase);
 
-            if state.buildings.armory_build {
+            if state.buildings.armory_built {
                 state.military.add(1);
             }
         }
@@ -59,7 +59,7 @@ fn execute_primary(state: &mut PlayerState, agent: &mut impl Agent, primary: Pri
             let power_increase = if state.upgrades.power_evolved { 3 } else { 2 };
             state.military.add(power_increase);
 
-            if state.buildings.monument_build {
+            if state.buildings.monument_built {
                 state.popularity.add(1);
             }
         }
@@ -68,7 +68,7 @@ fn execute_primary(state: &mut PlayerState, agent: &mut impl Agent, primary: Pri
             let card_increase = if state.upgrades.card_evolved { 2 } else { 1 };
             state.cards += card_increase;
 
-            if state.buildings.monument_build {
+            if state.buildings.monument_built {
                 state.popularity.add(1);
             }
         }
@@ -161,7 +161,7 @@ fn execute_secondary(state: &mut PlayerState, agent: &mut impl Agent, secondary:
                     state.popularity.add(1);
                 }
                 state.resources.wood -= cost;
-                state.buildings.build(Building::Mill);
+                state.buildings.built(Building::Mill);
                 state.buildings.mill_location = Some(agent.choose_mill_location(state));
                 state.coins += state.upgrades.get_upgrade_coins(SecondaryAction::Build);
             }
@@ -170,7 +170,7 @@ fn execute_secondary(state: &mut PlayerState, agent: &mut impl Agent, secondary:
                     state.popularity.add(1);
                 }
                 state.resources.wood -= cost;
-                state.buildings.build(building);
+                state.buildings.built(building);
                 state.coins += state.upgrades.get_upgrade_coins(SecondaryAction::Build);
             }
             _ => {}

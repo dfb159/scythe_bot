@@ -10,10 +10,10 @@ pub(crate) enum Building {
 
 #[derive(Debug)]
 pub(crate) struct BuildingsState {
-    pub(crate) mine_build: bool,
-    pub(crate) mill_build: bool,
-    pub(crate) armory_build: bool,
-    pub(crate) monument_build: bool,
+    pub(crate) mine_built: bool,
+    pub(crate) mill_built: bool,
+    pub(crate) armory_built: bool,
+    pub(crate) monument_built: bool,
 
     pub(crate) mill_location: Option<Resource>,
 
@@ -23,10 +23,10 @@ pub(crate) struct BuildingsState {
 impl BuildingsState {
     pub(crate) fn new() -> BuildingsState {
         BuildingsState {
-            mine_build: false,
-            mill_build: false,
-            armory_build: false,
-            monument_build: false,
+            mine_built: false,
+            mill_built: false,
+            armory_built: false,
+            monument_built: false,
 
             mill_location: None,
 
@@ -34,32 +34,32 @@ impl BuildingsState {
         }
     }
 
-    pub(crate) fn build(&mut self, building: Building) {
+    pub(crate) fn built(&mut self, building: Building) {
         match building {
             Building::Mine => {
-                self.mine_build = true;
+                self.mine_built = true;
             }
             Building::Mill => {
-                self.mill_build = true;
+                self.mill_built = true;
             }
             Building::Armory => {
-                self.armory_build = true;
+                self.armory_built = true;
             }
             Building::Monument => {
-                self.monument_build = true;
+                self.monument_built = true;
             }
         }
-        if self.mine_build && self.mill_build && self.armory_build && self.monument_build {
+        if self.mine_built && self.mill_built && self.armory_built && self.monument_built {
             self.star = true;
         }
     }
 
     pub(crate) fn can_build(&self, building: Building) -> bool {
         match building {
-            Building::Mine => !self.mine_build,
-            Building::Mill => !self.mill_build,
-            Building::Armory => !self.armory_build,
-            Building::Monument => !self.monument_build,
+            Building::Mine => !self.mine_built,
+            Building::Mill => !self.mill_built,
+            Building::Armory => !self.armory_built,
+            Building::Monument => !self.monument_built,
         }
     }
 }

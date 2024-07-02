@@ -1,5 +1,7 @@
+pub(crate) mod fcnn;
 pub(crate) mod human;
 pub(crate) mod random;
+mod FCNN;
 
 use crate::{
     campaign::{PrimaryAction, SecondaryAction},

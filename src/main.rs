@@ -2,6 +2,7 @@ pub mod agent;
 mod campaign;
 mod game;
 mod game_state;
+mod network;
 
 use agent::human::FullAgentIndustrialRusviet;
 use campaign::faction::RUSVIET;
