@@ -38,11 +38,6 @@ impl Agent for FullAgentIndustrialRusviet {
     }
 
     fn choose_primary(&self, state: &PlayerState) -> PrimaryAction {
-        // bolster_secondary: SecondaryAction::Upgrade,
-        // move_secondary: SecondaryAction::Build,
-        // produce_secondary: SecondaryAction::Deploy,
-        // trade_secondary: SecondaryAction::Enlist,
-
         // Make sure we have enough to do the primary action
         if state.coins <= 0 {
             return PrimaryAction::Tax;
@@ -57,7 +52,13 @@ impl Agent for FullAgentIndustrialRusviet {
         }
 
         match self.wanted {
-            Some(Resource::People) => PrimaryAction::Produce,
+            Some(Resource::People) => {
+                if state.production.population <= 0 {
+                    PrimaryAction::Move
+                } else {
+                    PrimaryAction::Produce
+                }
+            }
             Some(Resource::Oil) => {
                 if state.resources.oil < state.upgrades.get_upgrade_cost(SecondaryAction::Upgrade) {
                     if state.production.oil < state.production.total() {

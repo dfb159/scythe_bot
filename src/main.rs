@@ -3,6 +3,7 @@ mod campaign;
 mod game;
 mod game_state;
 
+use agent::human::FullAgentIndustrialRusviet;
 use campaign::faction::RUSVIET;
 use campaign::player_mat::INDUSTRIAL;
 use campaign::Player;
@@ -15,7 +16,7 @@ use agent::random::RandomAgent;
 
 use std::io;
 
-const DEBUG: u32 = 3;
+const DEBUG: u32 = 2;
 
 fn main() {
     println!("Welcome to scythe statistics!");
@@ -28,7 +29,7 @@ fn main() {
     };
 
     let mut state = PlayerState::new(&joey, &RUSVIET, &INDUSTRIAL);
-    let mut agent = RandomAgent {};
+    let mut agent = FullAgentIndustrialRusviet::new();
 
     while state.turns <= 500 && !state.has_won() {
         let (primary, secondary) = turn(&mut state, &mut agent);
