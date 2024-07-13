@@ -1,16 +1,9 @@
-use crate::campaign::{PlayerMat, SecondaryAction};
+use crate::{
+    campaign::{PlayerMat, SecondaryAction},
+    game::turnmask::{PrimaryUpgrade, SecondaryUpgrade},
+};
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
-pub(crate) enum Upgrade {
-    Popularity,
-    Power,
-    Card,
-    Move,
-    Tax,
-    Produce,
-}
-
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct UpgradesState {
     pub(crate) popularity_evolved: bool,
     pub(crate) power_evolved: bool,
@@ -62,44 +55,44 @@ impl UpgradesState {
         }
     }
 
-    pub(crate) fn upgrade(&mut self, primary: Upgrade, secondary: SecondaryAction) {
+    pub(crate) fn upgrade(&mut self, primary: PrimaryUpgrade, secondary: SecondaryUpgrade) {
         match primary {
-            Upgrade::Popularity => {
+            PrimaryUpgrade::Promote => {
                 self.popularity_evolved = true;
             }
-            Upgrade::Power => {
+            PrimaryUpgrade::Bolster => {
                 self.power_evolved = true;
             }
-            Upgrade::Card => {
+            PrimaryUpgrade::Enforce => {
                 self.card_evolved = true;
             }
-            Upgrade::Move => {
+            PrimaryUpgrade::Move => {
                 self.move_evolved = true;
             }
-            Upgrade::Tax => {
+            PrimaryUpgrade::Tax => {
                 self.tax_evolved = true;
             }
-            Upgrade::Produce => {
+            PrimaryUpgrade::Produce => {
                 self.produce_evolved = true;
             }
         }
         match secondary {
-            SecondaryAction::Upgrade => {
+            SecondaryUpgrade::Upgrade => {
                 if self.upgrade_evolution_cost > 0 {
                     self.upgrade_evolution_cost -= 1;
                 }
             }
-            SecondaryAction::Deploy => {
+            SecondaryUpgrade::Deploy => {
                 if self.deploy_evolution_cost > 0 {
                     self.deploy_evolution_cost -= 1;
                 }
             }
-            SecondaryAction::Build => {
+            SecondaryUpgrade::Build => {
                 if self.build_evolution_cost > 0 {
                     self.build_evolution_cost -= 1;
                 }
             }
-            SecondaryAction::Enlist => {
+            SecondaryUpgrade::Enlist => {
                 if self.enlist_evolution_cost > 0 {
                     self.enlist_evolution_cost -= 1;
                 }
@@ -116,27 +109,27 @@ impl UpgradesState {
         }
     }
 
-    pub(crate) fn can_upgrade(&self, primary: Upgrade, secondary: SecondaryAction) -> bool {
+    pub(crate) fn can_upgrade(&self, primary: PrimaryUpgrade, secondary: SecondaryUpgrade) -> bool {
         self.can_upgrade_primary(primary) && self.can_upgrade_secondary(secondary)
     }
 
-    pub(crate) fn can_upgrade_primary(&self, primary: Upgrade) -> bool {
+    pub(crate) fn can_upgrade_primary(&self, primary: PrimaryUpgrade) -> bool {
         match primary {
-            Upgrade::Popularity => !self.popularity_evolved,
-            Upgrade::Power => !self.power_evolved,
-            Upgrade::Card => !self.card_evolved,
-            Upgrade::Move => !self.move_evolved,
-            Upgrade::Tax => !self.tax_evolved,
-            Upgrade::Produce => !self.produce_evolved,
+            PrimaryUpgrade::Promote => !self.popularity_evolved,
+            PrimaryUpgrade::Bolster => !self.power_evolved,
+            PrimaryUpgrade::Enforce => !self.card_evolved,
+            PrimaryUpgrade::Move => !self.move_evolved,
+            PrimaryUpgrade::Tax => !self.tax_evolved,
+            PrimaryUpgrade::Produce => !self.produce_evolved,
         }
     }
 
-    pub(crate) fn can_upgrade_secondary(&self, secondary: SecondaryAction) -> bool {
+    pub(crate) fn can_upgrade_secondary(&self, secondary: SecondaryUpgrade) -> bool {
         match secondary {
-            SecondaryAction::Upgrade => self.upgrade_evolution_cost > 0,
-            SecondaryAction::Deploy => self.deploy_evolution_cost > 0,
-            SecondaryAction::Build => self.build_evolution_cost > 0,
-            SecondaryAction::Enlist => self.enlist_evolution_cost > 0,
+            SecondaryUpgrade::Upgrade => self.upgrade_evolution_cost > 0,
+            SecondaryUpgrade::Deploy => self.deploy_evolution_cost > 0,
+            SecondaryUpgrade::Build => self.build_evolution_cost > 0,
+            SecondaryUpgrade::Enlist => self.enlist_evolution_cost > 0,
         }
     }
 
@@ -149,12 +142,12 @@ impl UpgradesState {
         }
     }
 
-    pub(crate) fn get_upgrade_coins(&self, secondary: SecondaryAction) -> i32 {
+    pub(crate) fn get_upgrade_coins(&self, secondary: SecondaryUpgrade) -> i32 {
         match secondary {
-            SecondaryAction::Upgrade => self.upgrade_coins,
-            SecondaryAction::Deploy => self.deploy_coins,
-            SecondaryAction::Build => self.build_coins,
-            SecondaryAction::Enlist => self.enlist_coins,
+            SecondaryUpgrade::Upgrade => self.upgrade_coins,
+            SecondaryUpgrade::Deploy => self.deploy_coins,
+            SecondaryUpgrade::Build => self.build_coins,
+            SecondaryUpgrade::Enlist => self.enlist_coins,
         }
     }
 }

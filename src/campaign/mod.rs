@@ -1,7 +1,7 @@
+use crate::game::turnmask::Tile;
+
 pub mod faction;
 pub mod player_mat;
-
-use crate::Resource;
 
 #[derive(Debug)]
 pub(crate) struct Player<'a> {
@@ -17,8 +17,8 @@ pub(crate) struct Faction<'a> {
     pub(crate) starting_power: i32,
     pub(crate) starting_cards: i32,
 
-    pub(crate) first_starting_field: Resource,
-    pub(crate) second_starting_field: Resource,
+    pub(crate) first_starting_field: Tile,
+    pub(crate) second_starting_field: Tile,
 }
 
 #[derive(Debug)]

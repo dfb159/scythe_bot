@@ -1,3 +1,5 @@
+use std::slice::Iter;
+
 use buildings::BuildingsState;
 use mechs::MechsState;
 use military::MilitaryState;
@@ -7,7 +9,10 @@ use recruits::RecruitsState;
 use resources::ResourcesState;
 use upgrades::UpgradesState;
 
-use crate::campaign::{Faction, Player, PlayerMat, PrimaryAction, SecondaryAction};
+use crate::{
+    campaign::{Faction, Player, PlayerMat, PrimaryAction, SecondaryAction},
+    game::turnmask::TurnMask,
+};
 
 pub mod buildings;
 pub mod mechs;
@@ -18,12 +23,8 @@ pub mod recruits;
 pub mod resources;
 pub mod upgrades;
 
-#[derive(Debug)]
-pub(crate) struct PlayerState<'a> {
-    pub(crate) player_name: &'a str,
-    pub(crate) faction_name: &'a str,
-    pub(crate) playstyle_name: &'a str,
-
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct PlayerState {
     pub(crate) move_secondary: SecondaryAction, // for move and tax primary actions
     pub(crate) trade_secondary: SecondaryAction, // for trade and promote primary actions
     pub(crate) produce_secondary: SecondaryAction, // for produce primary action
@@ -44,17 +45,13 @@ pub(crate) struct PlayerState<'a> {
     pub(crate) turns: i32,
 }
 
-impl PlayerState<'_> {
+impl PlayerState {
     pub(crate) fn new<'a>(
         player: &'a Player<'a>,
         faction: &'a Faction<'a>,
         player_mat: &'a PlayerMat<'a>,
-    ) -> PlayerState<'a> {
+    ) -> PlayerState {
         PlayerState {
-            player_name: player.name,
-            faction_name: faction.name,
-            playstyle_name: player_mat.name,
-
             move_secondary: player_mat.move_secondary,
             trade_secondary: player_mat.trade_secondary,
             produce_secondary: player_mat.produce_secondary,
@@ -68,10 +65,10 @@ impl PlayerState<'_> {
             popularity: PopularityState::new(
                 player_mat.starting_popularity + player.bonus_starting_popularity,
             ),
-            production: ProductionState::new(
+            production: ProductionState::new(vec![
                 faction.first_starting_field,
                 faction.second_starting_field,
-            ),
+            ]),
 
             resources: ResourcesState::new(),
             coins: player_mat.starting_coins + player.bonus_starting_coins,
@@ -105,6 +102,20 @@ impl PlayerState<'_> {
             + self.resources.total() / 2 * self.popularity.resources_multiplier()
     }
 
+    pub(crate) fn get_primary(&self, secondary: SecondaryAction) -> PrimaryAction {
+        if secondary == self.move_secondary {
+            return PrimaryAction::Tax;
+        } else if secondary == self.trade_secondary {
+            return PrimaryAction::Promote;
+        } else if secondary == self.produce_secondary {
+            return PrimaryAction::Produce;
+        } else if secondary == self.bolster_secondary {
+            return PrimaryAction::Bolster;
+        } else {
+            panic!("Invalid secondary action: {:?} is not linked", secondary);
+        }
+    }
+
     pub(crate) fn get_secondary(&self, primary: PrimaryAction) -> SecondaryAction {
         match primary {
             PrimaryAction::Move => self.move_secondary,
@@ -129,5 +140,9 @@ impl PlayerState<'_> {
             return false;
         }
         true
+    }
+
+    pub(crate) fn get_actions(&self) -> Iter<'_, TurnMask> {
+        todo!()
     }
 }

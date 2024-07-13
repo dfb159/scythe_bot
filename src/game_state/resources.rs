@@ -1,4 +1,6 @@
-#[derive(Debug)]
+use crate::game::turnmask::Resource;
+
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct ResourcesState {
     pub(crate) wood: i32,
     pub(crate) metal: i32,
@@ -34,16 +36,15 @@ impl ResourcesState {
             Resource::Food => {
                 self.food += amount;
             }
-            _ => {}
         }
     }
-}
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
-pub(crate) enum Resource {
-    Wood,
-    Metal,
-    Oil,
-    Food,
-    People,
+    pub(crate) fn get(&self, resource: Resource) -> i32 {
+        match resource {
+            Resource::Wood => self.wood,
+            Resource::Metal => self.metal,
+            Resource::Oil => self.oil,
+            Resource::Food => self.food,
+        }
+    }
 }

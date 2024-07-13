@@ -1,245 +1,345 @@
 use crate::{
     campaign::{PrimaryAction, SecondaryAction},
-    game_state::{
-        buildings::Building, mechs::Mech, recruits::Recruit, resources::Resource,
-        upgrades::Upgrade, PlayerState,
+    game::{
+        turnhelper::{check_secondary_cost, map_primary, map_tile_resource},
+        turnmask::{
+            Building, Mech, Move, Primary, PrimaryUpgrade, Produce, Recruit, Resource, Secondary,
+            SecondaryUpgrade, Tile, TurnMask,
+        },
     },
+    game_state::PlayerState,
 };
 
 use super::Agent;
 
-pub(crate) struct FullAgentIndustrialRusviet {
-    wanted: Option<Resource>,
+#[derive(Debug)]
+pub(crate) enum Step {
+    Population,
+    Power,
+    Popularity,
+
+    Upgrade,
+    Deploy,
+    Build,
+    Recruit,
 }
 
-impl FullAgentIndustrialRusviet {
-    pub(crate) fn new() -> Self {
-        Self {
-            wanted: Some(Resource::People),
-        }
-    }
+pub(crate) struct PriorityAgent {
+    pub(crate) priority: Vec<Step>,
+    pub(crate) final_step: PrimaryAction,
+    pub(crate) mill_tile: Tile,
 }
+impl PriorityAgent {
+    fn choose_primary(&self, state: &PlayerState) -> Primary {
+        let step = self.priority.iter().find(|step| match step {
+            Step::Population => !state.production.star,
+            Step::Power => !state.military.star,
+            Step::Popularity => !state.popularity.star,
+            Step::Upgrade => !state.upgrades.star,
+            Step::Deploy => !state.mechs.star,
+            Step::Build => !state.buildings.star,
+            Step::Recruit => !state.recruits.star,
+        });
 
-impl Agent for FullAgentIndustrialRusviet {
-    fn prepare(&mut self, state: &PlayerState) {
-        if state.production.total() < 5 {
-            self.wanted = Some(Resource::People);
-        } else if !state.upgrades.star {
-            self.wanted = Some(Resource::Oil);
-        } else if !state.buildings.star {
-            self.wanted = Some(Resource::Wood);
-        } else if !state.recruits.star {
-            self.wanted = Some(Resource::Food);
-        } else if !state.mechs.star {
-            self.wanted = Some(Resource::Metal);
-        } else {
-            self.wanted = None;
+        match step {
+            Some(Step::Population) => move_produce(state, &Tile::Village, 8),
+            Some(Step::Power) => create_boster(state),
+            Some(Step::Popularity) => Primary::Promote,
+            Some(Step::Upgrade) => {
+                let cost = state.upgrades.get_upgrade_cost(SecondaryAction::Upgrade);
+                if cost <= state.resources.get(Resource::Oil) {
+                    // choose the primary action that enables upgrading as the secondary action
+                    create_primary_linked(state, SecondaryAction::Upgrade, &Tile::Tundra)
+                } else {
+                    // try to produce the wanted amount
+                    move_produce(state, &Tile::Tundra, cost)
+                }
+            }
+            Some(Step::Deploy) => {
+                let cost = state.upgrades.get_upgrade_cost(SecondaryAction::Deploy);
+                if cost <= state.resources.get(Resource::Metal) {
+                    // choose the primary action that enables deploying as the secondary action
+                    create_primary_linked(state, SecondaryAction::Deploy, &Tile::Mountain)
+                } else {
+                    // try to produce the wanted amount
+                    move_produce(state, &Tile::Mountain, cost)
+                }
+            }
+            Some(Step::Build) => {
+                let cost = state.upgrades.get_upgrade_cost(SecondaryAction::Build);
+                if cost <= state.resources.get(Resource::Wood) {
+                    // choose the primary action that enables building as the secondary action
+                    create_primary_linked(state, SecondaryAction::Build, &Tile::Woods)
+                } else {
+                    // try to produce the wanted amount
+                    move_produce(state, &Tile::Woods, cost)
+                }
+            }
+            Some(Step::Recruit) => {
+                let cost = state.upgrades.get_upgrade_cost(SecondaryAction::Enlist);
+                if cost <= state.resources.get(Resource::Food) {
+                    // choose the primary action that enables enlisting as the secondary action
+                    create_primary_linked(state, SecondaryAction::Enlist, &Tile::Farm)
+                } else {
+                    // try to produce the wanted amount
+                    move_produce(state, &Tile::Farm, cost)
+                }
+            }
+            _ => match self.final_step {
+                PrimaryAction::Move => match create_move(state, &Tile::Woods) {
+                    Some(m) => Primary::Move(m),
+                    None => Primary::Move(Move::Move1((Tile::Woods, Tile::Mountain))),
+                },
+                PrimaryAction::Tax => Primary::Tax,
+                PrimaryAction::Trade => create_trade(state, Resource::Wood),
+                PrimaryAction::Promote => create_promote(state),
+                PrimaryAction::Bolster => create_bolster(state),
+                PrimaryAction::Enforce => create_enforce(state),
+                PrimaryAction::Produce => create_produce(state, &Tile::Woods),
+            },
         }
     }
 
-    fn choose_primary(&self, state: &PlayerState) -> PrimaryAction {
-        // Make sure we have enough to do the primary action
-        if state.coins <= 0 {
-            return PrimaryAction::Tax;
-        }
-
-        if state.military.power <= 1 {
-            return PrimaryAction::Bolster;
-        }
-
-        if state.popularity.popularity <= 1 {
-            return PrimaryAction::Promote;
-        }
-
-        match self.wanted {
-            Some(Resource::People) => {
-                if state.production.population <= 0 {
-                    PrimaryAction::Move
+    fn choose_secondary(
+        &self,
+        state: &PlayerState,
+        secondary: SecondaryAction,
+    ) -> Option<Secondary> {
+        match secondary {
+            SecondaryAction::Upgrade => {
+                let primary_upgrade = if !state.upgrades.move_evolved {
+                    Some(PrimaryUpgrade::Move)
+                } else if !state.upgrades.tax_evolved {
+                    Some(PrimaryUpgrade::Tax)
+                } else if !state.upgrades.popularity_evolved {
+                    Some(PrimaryUpgrade::Promote)
+                } else if !state.upgrades.produce_evolved {
+                    Some(PrimaryUpgrade::Produce)
+                } else if !state.upgrades.power_evolved {
+                    Some(PrimaryUpgrade::Bolster)
+                } else if !state.upgrades.card_evolved {
+                    Some(PrimaryUpgrade::Enforce)
                 } else {
-                    PrimaryAction::Produce
-                }
-            }
-            Some(Resource::Oil) => {
-                if state.resources.oil < state.upgrades.get_upgrade_cost(SecondaryAction::Upgrade) {
-                    if state.production.oil < state.production.total() {
-                        PrimaryAction::Move
-                    } else {
-                        PrimaryAction::Produce
+                    return None;
+                };
+
+                let secondary_upgrade = if state.upgrades.upgrade_evolution_cost > 0 {
+                    Some(SecondaryUpgrade::Upgrade)
+                } else if state.upgrades.deploy_evolution_cost > 0 {
+                    Some(SecondaryUpgrade::Deploy)
+                } else if state.upgrades.build_evolution_cost > 0 {
+                    Some(SecondaryUpgrade::Build)
+                } else if state.upgrades.enlist_evolution_cost > 0 {
+                    Some(SecondaryUpgrade::Enlist)
+                } else {
+                    return None;
+                };
+
+                match (primary_upgrade, secondary_upgrade) {
+                    (Some(primary), Some(secondary)) => {
+                        Some(Secondary::Upgrade(primary, secondary))
                     }
-                } else {
-                    PrimaryAction::Bolster
-                }
-            }
-            Some(Resource::Wood) => {
-                if state.resources.wood < state.upgrades.get_upgrade_cost(SecondaryAction::Build) {
-                    if state.production.wood < state.production.total() {
-                        PrimaryAction::Move
-                    } else {
-                        PrimaryAction::Produce
-                    }
-                } else {
-                    PrimaryAction::Tax
-                }
-            }
-            Some(Resource::Metal) => {
-                if state.resources.metal < state.upgrades.get_upgrade_cost(SecondaryAction::Deploy)
-                {
-                    if state.production.metal < state.production.total() {
-                        PrimaryAction::Move
-                    } else {
-                        PrimaryAction::Produce
-                    }
-                } else {
-                    PrimaryAction::Produce
-                }
-            }
-            Some(Resource::Food) => {
-                if state.resources.food < state.upgrades.get_upgrade_cost(SecondaryAction::Enlist) {
-                    if state.production.food < state.production.total() {
-                        PrimaryAction::Move
-                    } else {
-                        PrimaryAction::Produce
-                    }
-                } else {
-                    PrimaryAction::Promote
-                }
-            }
-            _ if !state.military.star => PrimaryAction::Bolster,
-            _ if !state.popularity.star => PrimaryAction::Promote,
-            _ => PrimaryAction::Tax,
-        }
-    }
-
-    fn choose_trade(&self, _state: &PlayerState) -> Resource {
-        match self.wanted {
-            Some(resource) => resource,
-            _ => Resource::Metal,
-        }
-    }
-
-    fn choose_produce(&self, _state: &PlayerState) -> Resource {
-        match self.wanted {
-            Some(resource) => resource,
-            _ => Resource::Metal,
-        }
-    }
-
-    // Move the first available resource to the wanted resource
-    fn choose_move(&self, state: &PlayerState) -> Option<(Resource, Resource)> {
-        match self.wanted {
-            Some(wanted) => {
-                let from = vec![
-                    Resource::Wood,
-                    Resource::Metal,
-                    Resource::Oil,
-                    Resource::Food,
-                    Resource::People,
-                ]
-                .into_iter()
-                .filter(|resource| state.production.get(*resource) > 0)
-                .filter(|resource| resource != &wanted)
-                .next();
-
-                match from {
-                    Some(from) => Some((from, wanted)),
                     _ => None,
                 }
             }
-            _ => None,
+            SecondaryAction::Deploy => {
+                let mech = if !state.mechs.first_deployed {
+                    Some(Mech::First)
+                } else if !state.mechs.second_deployed {
+                    Some(Mech::Second)
+                } else if !state.mechs.third_deployed {
+                    Some(Mech::Third)
+                } else if !state.mechs.fourth_deployed {
+                    Some(Mech::Fourth)
+                } else {
+                    return None;
+                };
+
+                match mech {
+                    Some(mech) => Some(Secondary::Deploy(mech)),
+                    _ => None,
+                }
+            }
+            SecondaryAction::Build => {
+                let building = if !state.buildings.mill_built {
+                    Some(Building::Mill(self.mill_tile))
+                } else if !state.buildings.armory_built {
+                    Some(Building::Armory)
+                } else if !state.buildings.monument_built {
+                    Some(Building::Monument)
+                } else if !state.buildings.mine_built {
+                    Some(Building::Tunnel)
+                } else {
+                    return None;
+                };
+
+                match building {
+                    Some(building) => Some(Secondary::Build(building)),
+                    _ => None,
+                }
+            }
+            SecondaryAction::Enlist => {
+                let secondary = if !state.recruits.secondary_coin_recruited {
+                    Some(Recruit::Coin)
+                } else if !state.recruits.secondary_military_recruited {
+                    Some(Recruit::Power)
+                } else if !state.recruits.secondary_popularity_recruited {
+                    Some(Recruit::Popularity)
+                } else if !state.recruits.secondary_card_recruited {
+                    Some(Recruit::Card)
+                } else {
+                    return None;
+                };
+
+                let onetime = if !state.recruits.onetime_coin_recruited {
+                    Some(Recruit::Coin)
+                } else if !state.recruits.onetime_military_recruited {
+                    Some(Recruit::Power)
+                } else if !state.recruits.onetime_popularity_recruited {
+                    Some(Recruit::Popularity)
+                } else if !state.recruits.onetime_card_recruited {
+                    Some(Recruit::Card)
+                } else {
+                    return None;
+                };
+
+                match (secondary, onetime) {
+                    (Some(secondary), Some(onetime)) => Some(Secondary::Enlist(secondary, onetime)),
+                    _ => None,
+                }
+            }
         }
     }
+}
 
-    // Upgrade the first available primary and secondary; prioritize production and upgrades
-    fn upgrade(&self, state: &PlayerState) -> Option<(Upgrade, SecondaryAction)> {
-        let primary_list = vec![
-            Upgrade::Produce,
-            Upgrade::Move,
-            Upgrade::Popularity,
-            Upgrade::Power,
-            Upgrade::Tax,
-            Upgrade::Card,
-        ]
-        .into_iter()
-        .filter(|upgrade| state.upgrades.can_upgrade_primary(*upgrade))
-        .next();
-
-        let secondary_list = vec![
-            SecondaryAction::Upgrade,
-            SecondaryAction::Build,
-            SecondaryAction::Enlist,
-            SecondaryAction::Deploy,
-        ]
-        .into_iter()
-        .filter(|secondary| state.upgrades.can_upgrade_secondary(*secondary))
-        .next();
-
-        match (primary_list, secondary_list) {
-            (Some(primary), Some(secondary)) => Some((primary, secondary)),
-            _ => None,
-        }
+fn create_enforce(state: &PlayerState) -> Primary {
+    if state.coins <= 0 {
+        Primary::Tax
+    } else {
+        Primary::Enforce
     }
+}
 
-    // Deploy the first available mech
-    fn deploy(&self, state: &PlayerState) -> Option<Mech> {
-        let mech_list = vec![Mech::First, Mech::Second, Mech::Third, Mech::Fourth]
-            .into_iter()
-            .filter(|mech| state.mechs.can_deploy(*mech))
-            .next();
-
-        match mech_list {
-            Some(mech) => Some(mech),
-            _ => None,
-        }
+fn create_trade(state: &PlayerState, resource: Resource) -> Primary {
+    if state.coins <= 0 {
+        Primary::Tax
+    } else {
+        Primary::Trade(resource, resource)
     }
+}
 
-    // Build the next building, first the mill
-    fn build(&self, state: &PlayerState) -> Option<Building> {
-        let building_list = vec![
-            Building::Mill,
-            Building::Mine,
-            Building::Armory,
-            Building::Monument,
-        ]
-        .into_iter()
-        .filter(|building| state.buildings.can_build(*building))
-        .next();
-
-        match building_list {
-            Some(building) => Some(building),
-            _ => None,
-        }
+fn create_boster(state: &PlayerState) -> Primary {
+    if state.coins <= 0 {
+        Primary::Tax
+    } else {
+        Primary::Bolster
     }
+}
 
-    // Build on metal to try and get it passively
-    fn choose_mill_location(&self, _state: &PlayerState) -> Resource {
-        Resource::Metal
+fn create_primary_linked(state: &PlayerState, action: SecondaryAction, tile: &Tile) -> Primary {
+    match state.get_primary(action) {
+        PrimaryAction::Move => Primary::Tax,
+        PrimaryAction::Tax => Primary::Tax,
+        PrimaryAction::Trade => create_promote(state),
+        PrimaryAction::Promote => create_promote(state),
+        PrimaryAction::Bolster => create_bolster(state),
+        PrimaryAction::Enforce => create_bolster(state),
+        PrimaryAction::Produce => create_produce(state, tile),
     }
+}
 
-    // Enlist the first available recruits
-    fn enlist(&self, state: &PlayerState) -> Option<(Recruit, Recruit)> {
-        let secondary_list = vec![
-            Recruit::Coin,
-            Recruit::Popularity,
-            Recruit::Military,
-            Recruit::Card,
-        ]
-        .into_iter()
-        .filter(|recruit| !state.recruits.is_secondary_recruited(*recruit))
-        .next();
+fn create_bolster(state: &PlayerState) -> Primary {
+    if state.coins <= 0 {
+        Primary::Tax
+    } else {
+        Primary::Bolster
+    }
+}
 
-        let onetime_list = vec![
-            Recruit::Popularity,
-            Recruit::Coin,
-            Recruit::Military,
-            Recruit::Card,
-        ]
-        .into_iter()
-        .filter(|recruit| !state.recruits.is_onetime_recruited(*recruit))
-        .next();
+fn create_promote(state: &PlayerState) -> Primary {
+    if state.coins <= 0 {
+        Primary::Tax
+    } else {
+        Primary::Promote
+    }
+}
 
-        match (secondary_list, onetime_list) {
-            (Some(secondary), Some(onetime)) => Some((secondary, onetime)),
-            _ => None,
+fn move_produce(state: &PlayerState, target: &Tile, wanted: i32) -> Primary {
+    let current = match map_tile_resource(target) {
+        Some(resource) => state.resources.get(resource),
+        None => state.production.total(),
+    };
+    if wanted - current <= state.production.get(target) {
+        return create_produce(state, target);
+    }
+    match create_move(state, target) {
+        Some(m) => return Primary::Move(m),
+        None => create_produce(state, target),
+    }
+}
+
+fn create_move(state: &PlayerState, target: &Tile) -> Option<Move> {
+    let mut source = Vec::new();
+    for tile in vec![
+        &Tile::Woods,
+        &Tile::Mountain,
+        &Tile::Tundra,
+        &Tile::Farm,
+        &Tile::Village,
+    ] {
+        if tile == target {
+            continue;
         }
+
+        let count = state.production.get(tile) as usize;
+        source.extend(vec![tile; count]);
+    }
+    if source.len() >= 3 && state.upgrades.move_evolved {
+        Some(Move::Move3(
+            (source[0], *target),
+            (source[1], *target),
+            (source[2], *target),
+        ))
+    } else if source.len() >= 2 {
+        Some(Move::Move2((source[0], *target), (source[1], *target)))
+    } else if source.len() >= 1 {
+        Some(Move::Move1((source[0], *target)))
+    } else {
+        None
+    }
+}
+
+fn create_produce(state: &PlayerState, target: &Tile) -> Primary {
+    let total = state.production.total();
+    if total >= 8 && state.coins <= 0 {
+        Primary::Tax
+    } else if total >= 6 && state.popularity.popularity <= 0 {
+        if state.coins <= 0 {
+            Primary::Tax
+        } else {
+            Primary::Promote
+        }
+    } else if total >= 4 && state.military.power <= 0 {
+        if state.coins <= 0 {
+            Primary::Tax
+        } else {
+            Primary::Bolster
+        }
+    } else {
+        Primary::Produce(Produce::Produce1(*target))
+    }
+}
+
+impl Agent for PriorityAgent {
+    fn get_action(&mut self, state: &PlayerState) -> TurnMask {
+        let primary = self.choose_primary(state);
+        let secondary = state.get_secondary(map_primary(&primary));
+        if check_secondary_cost(state, secondary) {
+            if let Some(secondary) = self.choose_secondary(state, secondary) {
+                return TurnMask::PrimaryAndSecondary(primary, secondary);
+            }
+        }
+
+        TurnMask::PrimaryOnly(primary)
     }
 }

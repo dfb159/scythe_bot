@@ -1,12 +1,6 @@
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
-pub(crate) enum Mech {
-    First,
-    Second,
-    Third,
-    Fourth,
-}
+use crate::game::turnmask::Mech;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct MechsState {
     pub(crate) first_deployed: bool,
     pub(crate) second_deployed: bool,

@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct MilitaryState {
     pub(crate) power: i32,
     pub(crate) star: bool,

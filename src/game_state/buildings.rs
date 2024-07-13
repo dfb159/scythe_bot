@@ -1,21 +1,13 @@
-use super::resources::Resource;
+use crate::game::turnmask::{Building, Tile};
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
-pub(crate) enum Building {
-    Mine,
-    Mill,
-    Armory,
-    Monument,
-}
-
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct BuildingsState {
     pub(crate) mine_built: bool,
     pub(crate) mill_built: bool,
     pub(crate) armory_built: bool,
     pub(crate) monument_built: bool,
 
-    pub(crate) mill_location: Option<Resource>,
+    pub(crate) mill_location: Option<Tile>,
 
     pub(crate) star: bool,
 }
@@ -36,11 +28,12 @@ impl BuildingsState {
 
     pub(crate) fn built(&mut self, building: Building) {
         match building {
-            Building::Mine => {
+            Building::Tunnel => {
                 self.mine_built = true;
             }
-            Building::Mill => {
+            Building::Mill(location) => {
                 self.mill_built = true;
+                self.mill_location = Some(location);
             }
             Building::Armory => {
                 self.armory_built = true;
@@ -56,8 +49,8 @@ impl BuildingsState {
 
     pub(crate) fn can_build(&self, building: Building) -> bool {
         match building {
-            Building::Mine => !self.mine_built,
-            Building::Mill => !self.mill_built,
+            Building::Tunnel => !self.mine_built,
+            Building::Mill(_) => !self.mill_built,
             Building::Armory => !self.armory_built,
             Building::Monument => !self.monument_built,
         }

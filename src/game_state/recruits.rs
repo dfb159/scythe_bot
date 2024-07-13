@@ -1,12 +1,6 @@
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
-pub(crate) enum Recruit {
-    Military,
-    Coin,
-    Popularity,
-    Card,
-}
+use crate::game::turnmask::Recruit;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct RecruitsState {
     pub(crate) secondary_military_recruited: bool,
     pub(crate) secondary_coin_recruited: bool,
@@ -40,7 +34,7 @@ impl RecruitsState {
 
     pub(crate) fn recruit(&mut self, secondary: Recruit, onetime: Recruit) {
         match secondary {
-            Recruit::Military => {
+            Recruit::Power => {
                 self.secondary_military_recruited = true;
             }
             Recruit::Coin => {
@@ -54,7 +48,7 @@ impl RecruitsState {
             }
         }
         match onetime {
-            Recruit::Military => {
+            Recruit::Power => {
                 self.onetime_military_recruited = true;
             }
             Recruit::Coin => {
@@ -86,7 +80,7 @@ impl RecruitsState {
 
     pub(crate) fn is_secondary_recruited(&self, secondary: Recruit) -> bool {
         match secondary {
-            Recruit::Military => self.secondary_military_recruited,
+            Recruit::Power => self.secondary_military_recruited,
             Recruit::Coin => self.secondary_coin_recruited,
             Recruit::Popularity => self.secondary_popularity_recruited,
             Recruit::Card => self.secondary_card_recruited,
@@ -95,7 +89,7 @@ impl RecruitsState {
 
     pub(crate) fn is_onetime_recruited(&self, onetime: Recruit) -> bool {
         match onetime {
-            Recruit::Military => self.onetime_military_recruited,
+            Recruit::Power => self.onetime_military_recruited,
             Recruit::Coin => self.onetime_coin_recruited,
             Recruit::Popularity => self.onetime_popularity_recruited,
             Recruit::Card => self.onetime_card_recruited,

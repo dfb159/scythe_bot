@@ -1,61 +1,59 @@
 use std::cmp::min;
 
-use crate::Resource;
+use crate::game::turnmask::Tile;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct ProductionState {
-    pub(crate) wood: i32,
-    pub(crate) metal: i32,
-    pub(crate) oil: i32,
-    pub(crate) food: i32,
-    pub(crate) population: i32,
+    wood: i32,
+    metal: i32,
+    oil: i32,
+    food: i32,
+    population: i32,
+
+    pub(crate) star: bool,
 }
 
 impl ProductionState {
-    pub(crate) fn new(first_field: Resource, second_field: Resource) -> ProductionState {
+    pub(crate) fn new(starting_fields: Vec<Tile>) -> ProductionState {
         let mut state = ProductionState {
             wood: 0,
             metal: 0,
             oil: 0,
             food: 0,
             population: 0,
+            star: false,
         };
 
-        state.add(first_field, 1);
-        state.add(second_field, 1);
+        starting_fields.iter().for_each(|tile| {
+            state.add(tile, 1);
+        });
 
         state
     }
 
-    pub(crate) fn add(&mut self, resource: Resource, amount: i32) {
+    pub(crate) fn add(&mut self, tile: &Tile, amount: i32) {
         let reduced = min(amount, 8 - self.total());
 
-        match resource {
-            Resource::Wood => {
-                self.wood += reduced;
-            }
-            Resource::Metal => {
-                self.metal += reduced;
-            }
-            Resource::Oil => {
-                self.oil += reduced;
-            }
-            Resource::Food => {
-                self.food += reduced;
-            }
-            Resource::People => {
-                self.population += reduced;
-            }
+        match tile {
+            Tile::Woods => self.wood += reduced,
+            Tile::Mountain => self.metal += reduced,
+            Tile::Tundra => self.oil += reduced,
+            Tile::Farm => self.food += reduced,
+            Tile::Village => self.population += reduced,
+        }
+
+        if self.total() >= 8 {
+            self.star = true;
         }
     }
 
-    pub(crate) fn get(&self, resource: Resource) -> i32 {
-        match resource {
-            Resource::Wood => self.wood,
-            Resource::Metal => self.metal,
-            Resource::Oil => self.oil,
-            Resource::Food => self.food,
-            Resource::People => self.population,
+    pub(crate) fn get(&self, tile: &Tile) -> i32 {
+        match tile {
+            Tile::Woods => self.wood,
+            Tile::Mountain => self.metal,
+            Tile::Tundra => self.oil,
+            Tile::Farm => self.food,
+            Tile::Village => self.population,
         }
     }
 
