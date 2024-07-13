@@ -126,12 +126,12 @@ impl Predictor for FCNN<'_> {
     }
 }
 
-pub(crate) trait Learner {
-    fn learn(&mut self, input: &Array1<f64>, target: &Array1<f64>, learning_rate: f64);
+pub(crate) trait Trainer {
+    fn train(&mut self, input: &Array1<f64>, target: &Array1<f64>, learning_rate: f64);
 }
 
-impl Learner for FCNN<'_> {
-    fn learn(&mut self, input: &Array1<f64>, target: &Array1<f64>, learning_rate: f64) {
+impl Trainer for FCNN<'_> {
+    fn train(&mut self, input: &Array1<f64>, target: &Array1<f64>, learning_rate: f64) {
         if input.len() != self.heights[0] || target.len() != self.heights[self.heights.len() - 1] {
             panic!("Input or target size does not match the network architecture!");
         }

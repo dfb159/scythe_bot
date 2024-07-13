@@ -109,11 +109,15 @@ impl UpgradesState {
         }
     }
 
-    pub(crate) fn can_upgrade(&self, primary: PrimaryUpgrade, secondary: SecondaryUpgrade) -> bool {
+    pub(crate) fn can_upgrade(
+        &self,
+        primary: &PrimaryUpgrade,
+        secondary: &SecondaryUpgrade,
+    ) -> bool {
         self.can_upgrade_primary(primary) && self.can_upgrade_secondary(secondary)
     }
 
-    pub(crate) fn can_upgrade_primary(&self, primary: PrimaryUpgrade) -> bool {
+    pub(crate) fn can_upgrade_primary(&self, primary: &PrimaryUpgrade) -> bool {
         match primary {
             PrimaryUpgrade::Promote => !self.popularity_evolved,
             PrimaryUpgrade::Bolster => !self.power_evolved,
@@ -124,7 +128,7 @@ impl UpgradesState {
         }
     }
 
-    pub(crate) fn can_upgrade_secondary(&self, secondary: SecondaryUpgrade) -> bool {
+    pub(crate) fn can_upgrade_secondary(&self, secondary: &SecondaryUpgrade) -> bool {
         match secondary {
             SecondaryUpgrade::Upgrade => self.upgrade_evolution_cost > 0,
             SecondaryUpgrade::Deploy => self.deploy_evolution_cost > 0,
@@ -133,7 +137,7 @@ impl UpgradesState {
         }
     }
 
-    pub(crate) fn get_upgrade_cost(&self, secondary: SecondaryAction) -> i32 {
+    pub(crate) fn get_upgrade_cost(&self, secondary: &SecondaryAction) -> i32 {
         match secondary {
             SecondaryAction::Upgrade => self.upgrade_base_cost + self.upgrade_evolution_cost,
             SecondaryAction::Deploy => self.deploy_base_cost + self.deploy_evolution_cost,
@@ -142,7 +146,7 @@ impl UpgradesState {
         }
     }
 
-    pub(crate) fn get_upgrade_coins(&self, secondary: SecondaryUpgrade) -> i32 {
+    pub(crate) fn get_upgrade_coins(&self, secondary: &SecondaryUpgrade) -> i32 {
         match secondary {
             SecondaryUpgrade::Upgrade => self.upgrade_coins,
             SecondaryUpgrade::Deploy => self.deploy_coins,

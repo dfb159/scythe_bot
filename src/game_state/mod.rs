@@ -1,5 +1,3 @@
-use std::slice::Iter;
-
 use buildings::BuildingsState;
 use mechs::MechsState;
 use military::MilitaryState;
@@ -9,10 +7,7 @@ use recruits::RecruitsState;
 use resources::ResourcesState;
 use upgrades::UpgradesState;
 
-use crate::{
-    campaign::{Faction, Player, PlayerMat, PrimaryAction, SecondaryAction},
-    game::turnmask::TurnMask,
-};
+use crate::campaign::{Faction, Player, PlayerMat, PrimaryAction, SecondaryAction};
 
 pub mod buildings;
 pub mod mechs;
@@ -140,9 +135,5 @@ impl PlayerState {
             return false;
         }
         true
-    }
-
-    pub(crate) fn get_actions(&self) -> Iter<'_, TurnMask> {
-        todo!()
     }
 }

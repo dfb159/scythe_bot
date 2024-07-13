@@ -73,7 +73,7 @@ pub(crate) fn check_move_from(state: &PlayerState, from: &Tile) -> bool {
     state.production.get(from) >= 1
 }
 
-pub(crate) fn check_secondary_cost(state: &PlayerState, secondary: SecondaryAction) -> bool {
+pub(crate) fn check_secondary_cost(state: &PlayerState, secondary: &SecondaryAction) -> bool {
     (match secondary {
         SecondaryAction::Upgrade => state.resources.oil,
         SecondaryAction::Deploy => state.resources.metal,
@@ -224,7 +224,7 @@ fn execute_primary(mut state: &mut PlayerState, primary: &Primary) {
 }
 
 fn execute_secondary(state: &mut PlayerState, secondary: &Secondary) {
-    let cost = state.upgrades.get_upgrade_cost(map_secondary(secondary));
+    let cost = state.upgrades.get_upgrade_cost(&map_secondary(secondary));
     match secondary {
         Secondary::Upgrade(primary, secondary) if state.resources.oil >= cost => {
             if state.recruits.is_secondary_recruited(Recruit::Power) {
@@ -232,7 +232,7 @@ fn execute_secondary(state: &mut PlayerState, secondary: &Secondary) {
             }
             state.resources.oil -= cost;
             state.upgrades.upgrade(*primary, *secondary);
-            state.coins += state.upgrades.get_upgrade_coins(SecondaryUpgrade::Upgrade);
+            state.coins += state.upgrades.get_upgrade_coins(&SecondaryUpgrade::Upgrade);
         }
         Secondary::Deploy(mech) if state.resources.metal >= cost => {
             if state.recruits.is_secondary_recruited(Recruit::Coin) {
@@ -240,7 +240,7 @@ fn execute_secondary(state: &mut PlayerState, secondary: &Secondary) {
             }
             state.resources.metal -= cost;
             state.mechs.deploy(*mech);
-            state.coins += state.upgrades.get_upgrade_coins(SecondaryUpgrade::Deploy);
+            state.coins += state.upgrades.get_upgrade_coins(&SecondaryUpgrade::Deploy);
         }
         Secondary::Build(building) if state.resources.wood >= cost => {
             if state.recruits.is_secondary_recruited(Recruit::Popularity) {
@@ -248,7 +248,7 @@ fn execute_secondary(state: &mut PlayerState, secondary: &Secondary) {
             }
             state.resources.wood -= cost;
             state.buildings.built(*building);
-            state.coins += state.upgrades.get_upgrade_coins(SecondaryUpgrade::Build);
+            state.coins += state.upgrades.get_upgrade_coins(&SecondaryUpgrade::Build);
         }
         Secondary::Enlist(secondary, onetime) if state.resources.food >= cost => {
             if state.recruits.is_secondary_recruited(Recruit::Card) {
@@ -256,7 +256,7 @@ fn execute_secondary(state: &mut PlayerState, secondary: &Secondary) {
             }
             state.resources.food -= cost;
             state.recruits.recruit(*secondary, *onetime);
-            state.coins += state.upgrades.get_upgrade_coins(SecondaryUpgrade::Enlist);
+            state.coins += state.upgrades.get_upgrade_coins(&SecondaryUpgrade::Enlist);
         }
         _ => {}
     }

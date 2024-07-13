@@ -46,7 +46,7 @@ impl PriorityAgent {
             Some(Step::Power) => create_boster(state),
             Some(Step::Popularity) => Primary::Promote,
             Some(Step::Upgrade) => {
-                let cost = state.upgrades.get_upgrade_cost(SecondaryAction::Upgrade);
+                let cost = state.upgrades.get_upgrade_cost(&SecondaryAction::Upgrade);
                 if cost <= state.resources.get(Resource::Oil) {
                     // choose the primary action that enables upgrading as the secondary action
                     create_primary_linked(state, SecondaryAction::Upgrade, &Tile::Tundra)
@@ -56,7 +56,7 @@ impl PriorityAgent {
                 }
             }
             Some(Step::Deploy) => {
-                let cost = state.upgrades.get_upgrade_cost(SecondaryAction::Deploy);
+                let cost = state.upgrades.get_upgrade_cost(&SecondaryAction::Deploy);
                 if cost <= state.resources.get(Resource::Metal) {
                     // choose the primary action that enables deploying as the secondary action
                     create_primary_linked(state, SecondaryAction::Deploy, &Tile::Mountain)
@@ -66,7 +66,7 @@ impl PriorityAgent {
                 }
             }
             Some(Step::Build) => {
-                let cost = state.upgrades.get_upgrade_cost(SecondaryAction::Build);
+                let cost = state.upgrades.get_upgrade_cost(&SecondaryAction::Build);
                 if cost <= state.resources.get(Resource::Wood) {
                     // choose the primary action that enables building as the secondary action
                     create_primary_linked(state, SecondaryAction::Build, &Tile::Woods)
@@ -76,7 +76,7 @@ impl PriorityAgent {
                 }
             }
             Some(Step::Recruit) => {
-                let cost = state.upgrades.get_upgrade_cost(SecondaryAction::Enlist);
+                let cost = state.upgrades.get_upgrade_cost(&SecondaryAction::Enlist);
                 if cost <= state.resources.get(Resource::Food) {
                     // choose the primary action that enables enlisting as the secondary action
                     create_primary_linked(state, SecondaryAction::Enlist, &Tile::Farm)
@@ -334,7 +334,7 @@ impl Agent for PriorityAgent {
     fn get_action(&mut self, state: &PlayerState) -> TurnMask {
         let primary = self.choose_primary(state);
         let secondary = state.get_secondary(map_primary(&primary));
-        if check_secondary_cost(state, secondary) {
+        if check_secondary_cost(state, &secondary) {
             if let Some(secondary) = self.choose_secondary(state, secondary) {
                 return TurnMask::PrimaryAndSecondary(primary, secondary);
             }

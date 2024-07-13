@@ -138,7 +138,7 @@ impl RandomAgent {
         primary: PrimaryAction,
     ) -> Option<Secondary> {
         let action = state.get_secondary(primary);
-        if check_secondary_cost(state, action) {
+        if check_secondary_cost(state, &action) {
             match action {
                 SecondaryAction::Build => {
                     let mut possible = vec![];

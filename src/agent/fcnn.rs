@@ -3,8 +3,9 @@ use core::panic;
 use crate::agent::Agent;
 use crate::game::turnhelper::turn;
 use crate::game::turnmask::{Tile, TurnMask};
+use crate::game::turnpredictor::get_actions;
 use crate::game_state::PlayerState;
-use crate::network::fcnn::{MLFunction, Predictor, FCNN};
+use crate::network::fcnn::{MLFunction, Predictor, Trainer, FCNN};
 
 use ndarray::Array1;
 
@@ -41,6 +42,36 @@ impl PredictiveQAgent<'_> {
         let coin = self.coin_network.predict(&vector);
         coin[0]
     }
+
+    pub(crate) fn train(&mut self, state: &PlayerState, gamma: f64, learning_rate: f64) {
+        // Search the best prediction of the next move
+        let (action, best_prediction) = self.max_turn(state);
+        let new_state = turn(*state, &action);
+
+        // Update the prediction by the Bellman equation with the best prediction
+        let total_coins = new_state.total_coins() as f64;
+        let new_prediction = total_coins + gamma * best_prediction;
+
+        // Train the network with the new prediction. the leaning rate is replacing the alpha in the Bellman equation
+        let input = transform_state(state);
+        let target = Array1::from_elem(1, new_prediction);
+        self.coin_network.train(&input, &target, learning_rate)
+    }
+
+    fn max_turn(&mut self, state: &PlayerState) -> (TurnMask, f64) {
+        match get_actions(state)
+            .iter()
+            .map(|action| {
+                let new_state = turn(state.clone(), action);
+                let new_coin = self.predict(&new_state);
+                (action, new_coin)
+            })
+            .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
+        {
+            Some((mask, coins)) => (*mask, coins),
+            None => panic!("No actions available!"),
+        }
+    }
 }
 
 pub(crate) enum Layout {
@@ -56,17 +87,8 @@ pub(crate) enum Layout {
 
 impl Agent for PredictiveQAgent<'_> {
     fn get_action(&mut self, state: &PlayerState) -> TurnMask {
-        let iterator = state.get_actions().map(|action| {
-            let new_state = turn(state.clone(), action);
-            let new_coin = self.predict(&new_state);
-            (action, new_coin)
-        });
-
-        let max_action = iterator.max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap());
-        match max_action {
-            Some((action, _)) => *action,
-            None => panic!("No actions available!"),
-        }
+        let (action, _) = self.max_turn(state);
+        action
     }
 }
 
