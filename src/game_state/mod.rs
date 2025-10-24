@@ -41,10 +41,11 @@ pub(crate) struct PlayerState {
 }
 
 impl PlayerState {
-    pub(crate) fn new<'a>(
-        player: &'a Player<'a>,
-        faction: &'a Faction<'a>,
-        player_mat: &'a PlayerMat<'a>,
+    /// Creates a blank [`PlayerState`] from the provided [`Player`], [`Faction`] and [`PlayerMat`] templates.
+    pub(crate) fn new(
+        player: &Player,
+        faction: &Faction,
+        player_mat: &PlayerMat,
     ) -> PlayerState {
         PlayerState {
             move_secondary: player_mat.move_secondary,

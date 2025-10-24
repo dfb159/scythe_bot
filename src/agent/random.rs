@@ -88,6 +88,7 @@ impl RandomAgent {
                     Resource::Metal,
                     Resource::Food,
                 ]
+                .iter()
                 .choose(&mut self.rng)
                 .unwrap(),
                 *vec![
@@ -96,6 +97,7 @@ impl RandomAgent {
                     Resource::Metal,
                     Resource::Food,
                 ]
+                .iter()
                 .choose(&mut self.rng)
                 .unwrap(),
             ),
@@ -152,14 +154,14 @@ impl RandomAgent {
                         possible.push(Secondary::Build(Building::Tunnel));
                     }
                     if !state.buildings.mill_built {
-                        let location = LOCATIONS.choose(&mut self.rng).unwrap();
+                        let location = LOCATIONS.iter().choose(&mut self.rng).unwrap();
                         possible.push(Secondary::Build(Building::Mill(*location)));
                     }
 
                     if possible.is_empty() {
                         None
                     } else {
-                        Some(possible.choose(&mut self.rng).unwrap().clone())
+                        Some(possible.iter().choose(&mut self.rng).unwrap().clone())
                     }
                 }
                 SecondaryAction::Deploy => {
@@ -180,7 +182,7 @@ impl RandomAgent {
                     if possible.is_empty() {
                         None
                     } else {
-                        Some(possible.choose(&mut self.rng).unwrap().clone())
+                        Some(possible.iter().choose(&mut self.rng).unwrap().clone())
                     }
                 }
                 SecondaryAction::Enlist => {
@@ -197,7 +199,7 @@ impl RandomAgent {
                     if !state.recruits.secondary_popularity_recruited {
                         possible.push(Recruit::Popularity);
                     }
-                    let secondary = possible.choose(&mut self.rng);
+                    let secondary = possible.iter().choose(&mut self.rng);
 
                     let mut possible = vec![];
                     if !state.recruits.onetime_card_recruited {
@@ -212,7 +214,7 @@ impl RandomAgent {
                     if !state.recruits.onetime_popularity_recruited {
                         possible.push(Recruit::Popularity);
                     }
-                    let onetime = possible.choose(&mut self.rng);
+                    let onetime = possible.iter().choose(&mut self.rng);
 
                     match (secondary, onetime) {
                         (Some(secondary), Some(onetime)) => {
@@ -242,7 +244,7 @@ impl RandomAgent {
                         possible.push(PrimaryUpgrade::Promote);
                     }
 
-                    let primary = possible.choose(&mut self.rng);
+                    let primary = possible.iter().choose(&mut self.rng);
 
                     let mut possible = vec![];
                     if !state.upgrades.upgrade_evolution_cost > 0 {
@@ -257,7 +259,7 @@ impl RandomAgent {
                     if !state.upgrades.enlist_evolution_cost > 0 {
                         possible.push(SecondaryUpgrade::Enlist);
                     }
-                    let secondary = possible.choose(&mut self.rng);
+                    let secondary = possible.iter().choose(&mut self.rng);
 
                     match (primary, secondary) {
                         (Some(primary), Some(secondary)) => {
