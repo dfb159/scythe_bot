@@ -5,6 +5,8 @@ pub(crate) enum Tile {
     Mountain,
     Farm,
     Village,
+    Lake,
+    Factory,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
