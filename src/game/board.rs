@@ -12,7 +12,7 @@ pub struct Board {
 }
 
 impl Board {
-    fn from_template<const F: usize, const R: usize, const P: usize>(
+    pub fn from_template<const F: usize, const R: usize, const P: usize>(
         template: &BoardTemplate<F, R, P>,
     ) -> Self {
         let mut fields = HashMap::with_capacity(F+P);
@@ -66,11 +66,11 @@ impl Board {
         }
     }
 
-    fn get_field(self, position: &Position) -> Option<Rc<Field>> {
+    pub fn get_field(&self, position: &Position) -> Option<Rc<Field>> {
         self.fields.get(position).cloned()
     }
 
-    fn is_river(self, from: &Field, to: &Field) -> bool {
+    pub fn is_river(&self, from: &Field, to: &Field) -> bool {
         // TODO maybe need to pass &Rc<Field> here
         self.rivers
             .iter()

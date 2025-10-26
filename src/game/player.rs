@@ -35,10 +35,11 @@ pub struct PlayerState {
     pub cards: u8, // TODO: change to actual BattleCards
 }
 
+#[derive(Debug, Clone)]
 pub struct PlayerTemplate<'a> {
-    player: Player<'a>,
-    faction: Faction<'a>,
-    player_mat: PlayerMat<'a>,
+    pub player: Player<'a>,
+    pub faction: Faction<'a>,
+    pub player_mat: PlayerMat<'a>,
 }
 
 pub type Territory = Vec<Rc<Field>>;

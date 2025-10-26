@@ -4,7 +4,7 @@ pub mod faction;
 pub mod player_mat;
 pub mod board;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Player<'a> {
     pub name: &'a str,
     pub bonus_starting_coins: u32,
@@ -12,7 +12,7 @@ pub struct Player<'a> {
     pub bonus_starting_popularity: u8,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Faction<'a> {
     pub name: &'a str,
     pub starting_power: u8,
@@ -53,7 +53,7 @@ pub enum FactionAbility {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PlayerMat<'a> {
     pub name: &'a str,
     pub starting_index: u8,

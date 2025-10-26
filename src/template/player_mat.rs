@@ -47,7 +47,6 @@ pub const ENGINEERING: PlayerMat = PlayerMat {
     enlist_coins: 1,
 };
 
-
 pub const PATRIOTIC: PlayerMat = PlayerMat {
     name: "Patriotic",
     starting_index: 3,
@@ -71,7 +70,6 @@ pub const PATRIOTIC: PlayerMat = PlayerMat {
     enlist_coins: 2,
 };
 
-
 pub const MECHANICAL: PlayerMat = PlayerMat {
     name: "Mechanical",
     starting_index: 4,
@@ -94,7 +92,6 @@ pub const MECHANICAL: PlayerMat = PlayerMat {
     enlist_evolutions: 2,
     enlist_coins: 2,
 };
-
 
 pub const AGRICULTURAL: PlayerMat = PlayerMat {
     name: "Agricultural",
