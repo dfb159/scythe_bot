@@ -9,12 +9,12 @@ use crate::network::fcnn::{MLFunction, Predictor, Trainer, FCNN};
 
 use ndarray::Array1;
 
-pub(crate) struct PredictiveQAgent<'a> {
+pub struct PredictiveQAgent<'a> {
     coin_network: FCNN<'a>,
 }
 
 impl PredictiveQAgent<'_> {
-    pub(crate) fn new(hidden: usize, layout: Layout) -> Self {
+    pub fn new(hidden: usize, layout: Layout) -> Self {
         let layout = match layout {
             Layout::Fixed { height } => vec![height; hidden],
             Layout::Convolution {
@@ -37,13 +37,13 @@ impl PredictiveQAgent<'_> {
         }
     }
 
-    pub(crate) fn predict(&self, state: &PlayerState) -> f64 {
+    pub fn predict(&self, state: &PlayerState) -> f64 {
         let vector = transform_state(state);
         let coin = self.coin_network.predict(&vector);
         coin[0]
     }
 
-    pub(crate) fn train(&mut self, state: &PlayerState, gamma: f64, learning_rate: f64) {
+    pub fn train(&mut self, state: &PlayerState, gamma: f64, learning_rate: f64) {
         // Search the best prediction of the next move
         let (action, best_prediction) = self.max_turn(state);
         let new_state = turn(*state, &action);
@@ -74,7 +74,7 @@ impl PredictiveQAgent<'_> {
     }
 }
 
-pub(crate) enum Layout {
+pub enum Layout {
     Fixed {
         height: usize,
     },

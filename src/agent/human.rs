@@ -13,7 +13,7 @@ use crate::{
 use super::Agent;
 
 #[derive(Debug)]
-pub(crate) enum Step {
+pub enum Step {
     Population,
     Power,
     Popularity,
@@ -24,10 +24,10 @@ pub(crate) enum Step {
     Recruit,
 }
 
-pub(crate) struct PriorityAgent {
-    pub(crate) priority: Vec<Step>,
-    pub(crate) final_step: PrimaryAction,
-    pub(crate) mill_tile: Tile,
+pub struct PriorityAgent {
+    pub priority: Vec<Step>,
+    pub final_step: PrimaryAction,
+    pub mill_tile: Tile,
 }
 impl PriorityAgent {
     fn choose_primary(&self, state: &PlayerState) -> Primary {

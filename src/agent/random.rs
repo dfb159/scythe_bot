@@ -17,11 +17,11 @@ use crate::{
 
 use super::Agent;
 
-pub(crate) struct RandomAgent {
+pub struct RandomAgent {
     rng: ThreadRng,
 }
 impl RandomAgent {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             rng: rand::thread_rng(),
         }

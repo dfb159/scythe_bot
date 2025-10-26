@@ -25,7 +25,7 @@ fn produce_state() -> ProductionState {
     })
 }
 
-pub(crate) fn check_primary(state: &PlayerState, primary: &Primary) -> bool {
+pub fn check_primary(state: &PlayerState, primary: &Primary) -> bool {
     match primary {
         Primary::Move(Move1((tile1, _))) => check_movement(&state.production, vec![tile1]),
         Primary::Move(Move2((tile1, _), (tile2, _))) => {
@@ -69,11 +69,11 @@ fn check_movement(state: &ProductionState, tiles: Vec<&Tile>) -> bool {
         && state.get(&Tile::Village) >= needed.get(&Tile::Village)
 }
 
-pub(crate) fn check_move_from(state: &PlayerState, from: &Tile) -> bool {
+pub fn check_move_from(state: &PlayerState, from: &Tile) -> bool {
     state.production.get(from) >= 1
 }
 
-pub(crate) fn check_secondary_cost(state: &PlayerState, secondary: &SecondaryAction) -> bool {
+pub fn check_secondary_cost(state: &PlayerState, secondary: &SecondaryAction) -> bool {
     (match secondary {
         SecondaryAction::Upgrade => state.resources.oil,
         SecondaryAction::Deploy => state.resources.metal,
@@ -83,7 +83,7 @@ pub(crate) fn check_secondary_cost(state: &PlayerState, secondary: &SecondaryAct
 }
 
 /// Execute one turn and return the new state
-pub(crate) fn turn(mut state: PlayerState, mask: &TurnMask) -> PlayerState {
+pub fn turn(mut state: PlayerState, mask: &TurnMask) -> PlayerState {
     match mask {
         TurnMask::PrimaryOnly(primary) if check_primary(&state, primary) => {
             execute_primary(&mut state, primary)
@@ -285,7 +285,7 @@ fn produce_resource(state: &mut PlayerState, tile: &Tile) {
     }
 }
 
-pub(crate) fn map_primary(primary: &Primary) -> PrimaryAction {
+pub fn map_primary(primary: &Primary) -> PrimaryAction {
     match primary {
         Primary::Move(_) => PrimaryAction::Move,
         Primary::Tax => PrimaryAction::Tax,
@@ -297,7 +297,7 @@ pub(crate) fn map_primary(primary: &Primary) -> PrimaryAction {
     }
 }
 
-pub(crate) fn map_secondary(secondary: &Secondary) -> SecondaryAction {
+pub fn map_secondary(secondary: &Secondary) -> SecondaryAction {
     match secondary {
         Secondary::Upgrade(_, _) => SecondaryAction::Upgrade,
         Secondary::Deploy(_) => SecondaryAction::Deploy,
@@ -306,7 +306,7 @@ pub(crate) fn map_secondary(secondary: &Secondary) -> SecondaryAction {
     }
 }
 
-pub(crate) fn map_tile_resource(tile: &Tile) -> Option<Resource> {
+pub fn map_tile_resource(tile: &Tile) -> Option<Resource> {
     match tile {
         Tile::Woods => Some(Resource::Wood),
         Tile::Mountain => Some(Resource::Metal),

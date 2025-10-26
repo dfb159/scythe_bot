@@ -12,7 +12,7 @@ use crate::{
 
 use super::turnmask::{PrimaryUpgrade, Produce};
 
-pub(crate) fn get_actions(state: &PlayerState) -> Vec<TurnMask> {
+pub fn get_actions(state: &PlayerState) -> Vec<TurnMask> {
     let mut actions = Vec::new();
     for primary in get_primaries(state) {
         let primary_only = TurnMask::PrimaryOnly(primary);

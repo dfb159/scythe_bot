@@ -1,1 +1,1 @@
-pub(crate) mod fcnn;
+pub mod fcnn;

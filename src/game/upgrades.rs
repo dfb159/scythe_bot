@@ -93,16 +93,16 @@ impl UpgradesState {
         }
         match secondary {
             SecondaryUpgrade::Upgrade => {
-                self.upgrade_evolution_cost.saturating_sub(1);
+                self.upgrade_evolution_cost = self.upgrade_evolution_cost.saturating_sub(1);
             }
             SecondaryUpgrade::Deploy => {
-                self.deploy_evolution_cost.saturating_sub(1);
+                self.deploy_evolution_cost = self.deploy_evolution_cost.saturating_sub(1);
             }
             SecondaryUpgrade::Build => {
-                self.build_evolution_cost.saturating_sub(1);
+                self.build_evolution_cost = self.build_evolution_cost.saturating_sub(1);
             }
             SecondaryUpgrade::Enlist => {
-                self.enlist_evolution_cost.saturating_sub(1);
+                self.enlist_evolution_cost = self.enlist_evolution_cost.saturating_sub(1);
             }
         }
         if self.popularity_evolved
@@ -142,10 +142,18 @@ impl UpgradesState {
 
     pub fn get_upgrade_cost(&self, secondary: &SecondaryAction) -> u8 {
         match secondary {
-            SecondaryAction::Upgrade => self.upgrade_base_cost.saturating_add(self.upgrade_evolution_cost),
-            SecondaryAction::Deploy => self.deploy_base_cost.saturating_add(self.deploy_evolution_cost),
-            SecondaryAction::Build => self.build_base_cost.saturating_add(self.build_evolution_cost),
-            SecondaryAction::Enlist => self.enlist_base_cost.saturating_add(self.enlist_evolution_cost),
+            SecondaryAction::Upgrade => self
+                .upgrade_base_cost
+                .saturating_add(self.upgrade_evolution_cost),
+            SecondaryAction::Deploy => self
+                .deploy_base_cost
+                .saturating_add(self.deploy_evolution_cost),
+            SecondaryAction::Build => self
+                .build_base_cost
+                .saturating_add(self.build_evolution_cost),
+            SecondaryAction::Enlist => self
+                .enlist_base_cost
+                .saturating_add(self.enlist_evolution_cost),
         }
     }
 

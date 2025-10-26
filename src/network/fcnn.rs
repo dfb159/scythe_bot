@@ -3,7 +3,7 @@ use ndarray::{Array1, Array2};
 type MathFn = fn(f64) -> f64;
 type MathFnClosure<'a> = Box<dyn Fn(f64) -> f64 + 'a>;
 
-pub(crate) enum MLFunction<'a> {
+pub enum MLFunction<'a> {
     Linear,
     Sigmoid,
     Tanh,
@@ -73,7 +73,7 @@ fn elu(x: f64) -> f64 {
     }
 }
 
-pub(crate) struct FCNN<'a> {
+pub struct FCNN<'a> {
     weights: Vec<Array2<f64>>,
     biases: Vec<Array1<f64>>,
     functions: Vec<&'a MLFunction<'a>>,
@@ -107,7 +107,7 @@ impl<'a> FCNN<'a> {
     }
 }
 
-pub(crate) trait Predictor {
+pub trait Predictor {
     fn predict(&self, input: &Array1<f64>) -> Array1<f64>;
 }
 
@@ -126,7 +126,7 @@ impl Predictor for FCNN<'_> {
     }
 }
 
-pub(crate) trait Trainer {
+pub trait Trainer {
     fn train(&mut self, input: &Array1<f64>, target: &Array1<f64>, learning_rate: f64);
 }
 
