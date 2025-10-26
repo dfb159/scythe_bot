@@ -4,10 +4,10 @@ use crate::game::board::Field;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum Mech {
-    First,
-    Second,
-    Third,
-    Fourth,
+    First = 0,
+    Second = 1,
+    Third = 2,
+    Fourth = 3,
 }
 
 pub type MechEntity = Rc<Field>;
@@ -27,20 +27,7 @@ impl MechsState {
     }
 
     pub fn deploy(&mut self, mech: Mech, tile: &Rc<Field>) {
-        match mech {
-            Mech::First => {
-                self.mechs[0] = Some(tile.clone());
-            }
-            Mech::Second => {
-                self.mechs[1] = Some(tile.clone());
-            }
-            Mech::Third => {
-                self.mechs[2] = Some(tile.clone());
-            }
-            Mech::Fourth => {
-                self.mechs[3] = Some(tile.clone());
-            }
-        }
+        self.mechs[mech as usize] = Some(tile.clone());
         if self.mechs.iter().all(|m| m.is_some()) {
             self.star = true;
         }
@@ -51,11 +38,10 @@ impl MechsState {
     }
 
     pub fn is_deployed(&self, mech: Mech) -> bool {
-        match mech {
-            Mech::First => self.mechs[0].is_some(),
-            Mech::Second => self.mechs[1].is_some(),
-            Mech::Third => self.mechs[2].is_some(),
-            Mech::Fourth => self.mechs[3].is_some(),
-        }
+        self.mechs[mech as usize].is_some()
+    }
+
+    pub fn get_mech(&self, mech: Mech) -> &Option<MechEntity> {
+        &self.mechs[mech as usize]
     }
 }

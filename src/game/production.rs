@@ -2,6 +2,18 @@ use std::rc::Rc;
 
 use crate::game::board::Field;
 
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+pub enum Worker {
+    First = 0,
+    Second = 1,
+    Third = 2,
+    Fourth = 3,
+    Fifth = 4,
+    Sixth = 5,
+    Seventh = 6,
+    Eighth = 7,
+}
+
 pub type WorkerEntity = Rc<Field>;
 
 #[derive(Debug, Clone)]
@@ -39,5 +51,9 @@ impl ProductionState {
                 _ => 0,
             }
         })
+    }
+
+    pub fn get_worker(&self, worker: Worker) -> &Option<WorkerEntity> {
+        &self.workers[worker as usize]
     }
 }
