@@ -1,17 +1,18 @@
 pub mod agent;
-mod campaign;
+mod template;
 mod game;
 mod game_state;
 mod network;
+mod turn;
 
 use agent::{
     human::{PriorityAgent, Step},
     random::RandomAgent,
     Agent,
 };
-use campaign::faction::RUSVIET;
-use campaign::player_mat::INDUSTRIAL;
-use campaign::{Player, PrimaryAction};
+use template::faction::RUSVIET;
+use template::player_mat::INDUSTRIAL;
+use template::{Player, PrimaryAction};
 
 use game::turnhelper::turn;
 use game::turnmask::{Tile, TurnMask};

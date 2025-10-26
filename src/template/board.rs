@@ -1,4 +1,4 @@
-use crate::{template::{BoardTemplate, FieldTemplate}, game::turnmask::Tile};
+use crate::{game::Tile, template::{BoardTemplate, FieldTemplate, HomeTemplate}};
 
 use super::Position;
 
@@ -91,12 +91,12 @@ pub const NORMAL: BoardTemplate<46, 30, 7> = BoardTemplate {
         (Position(2,-3),Position(3,-3)),
     ],
     starting_locations: [
-        Position(3,1),
-        Position(-1,4),
-        Position(-4,4),
-        Position(-4,1),
-        Position(-2,-3),
-        Position(1,-4),
-        Position(5,-3),
+        HomeTemplate{position: Position(3,1), start1: Position(2,1), start2: Position(3,0) },
+        HomeTemplate{position: Position(-1,4), start1: Position(-1,3), start2: Position(0,3) },
+        HomeTemplate{position: Position(-4,4), start1: Position(-4,3), start2: Position(-3,3) },
+        HomeTemplate{position: Position(-4,1), start1: Position(-3,1), start2: Position(-3,0) },
+        HomeTemplate{position: Position(-2,-3), start1: Position(-2,-2), start2: Position(-1,-3) },
+        HomeTemplate{position: Position(1,-4), start1: Position(1,-3), start2: Position(2,-4) },
+        HomeTemplate{position: Position(5,-3), start1: Position(4,-3), start2: Position(4,-2) },
     ],
 };

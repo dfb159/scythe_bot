@@ -1,7 +1,7 @@
 use std::sync::OnceLock;
 
 use crate::{
-    campaign::{PrimaryAction, SecondaryAction},
+    template::{PrimaryAction, SecondaryAction},
     game_state::{production::ProductionState, PlayerState},
 };
 

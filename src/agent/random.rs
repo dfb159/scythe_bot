@@ -2,7 +2,7 @@ use rand::seq::SliceRandom;
 use rand::{prelude::ThreadRng, seq::IteratorRandom};
 
 use crate::{
-    campaign::{PrimaryAction, SecondaryAction},
+    template::{PrimaryAction, SecondaryAction},
     game::{
         turnhelper::{check_secondary_cost, map_primary},
         turnmask::{

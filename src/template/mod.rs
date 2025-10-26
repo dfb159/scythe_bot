@@ -1,4 +1,4 @@
-use crate::game::turnmask::Tile;
+use crate::game::Tile;
 
 pub mod faction;
 pub mod player_mat;
@@ -7,16 +7,16 @@ pub mod board;
 #[derive(Debug)]
 pub struct Player<'a> {
     pub name: &'a str,
-    pub bonus_starting_coins: i32,
-    pub bonus_starting_power: i32,
-    pub bonus_starting_popularity: i32,
+    pub bonus_starting_coins: u32,
+    pub bonus_starting_power: u8,
+    pub bonus_starting_popularity: u8,
 }
 
 #[derive(Debug)]
 pub struct Faction<'a> {
     pub name: &'a str,
-    pub starting_power: i32,
-    pub starting_cards: i32,
+    pub starting_power: u8,
+    pub starting_cards: u8,
 
     pub riverwalk_tile1: Tile,
     pub riverwalk_tile2: Tile,
@@ -56,28 +56,28 @@ pub enum FactionAbility {
 #[derive(Debug)]
 pub struct PlayerMat<'a> {
     pub name: &'a str,
-    pub starting_index: i32,
+    pub starting_index: u8,
 
-    pub starting_coins: i32,
-    pub starting_popularity: i32,
+    pub starting_coins: u32,
+    pub starting_popularity: u8,
 
     pub move_secondary: SecondaryAction, // for move and tax primary actions
     pub trade_secondary: SecondaryAction, // for trade and promote primary actions
     pub produce_secondary: SecondaryAction, // for produce primary action
     pub bolster_secondary: SecondaryAction, // for bolster and enforce primary actions
 
-    pub upgrade_cost: i32,
-    pub upgrade_evolutions: i32,
-    pub upgrade_coins: i32,
-    pub deploy_cost: i32,
-    pub deploy_evolutions: i32,
-    pub deploy_coins: i32,
-    pub build_cost: i32,
-    pub build_evolutions: i32,
-    pub build_coins: i32,
-    pub enlist_cost: i32,
-    pub enlist_evolutions: i32,
-    pub enlist_coins: i32,
+    pub upgrade_cost: u8,
+    pub upgrade_evolutions: u8,
+    pub upgrade_coins: u32,
+    pub deploy_cost: u8,
+    pub deploy_evolutions: u8,
+    pub deploy_coins: u32,
+    pub build_cost: u8,
+    pub build_evolutions: u8,
+    pub build_coins: u32,
+    pub enlist_cost: u8,
+    pub enlist_evolutions: u8,
+    pub enlist_coins: u32,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
@@ -101,17 +101,24 @@ pub enum SecondaryAction {
 
 #[derive(Debug)]
 pub struct BoardTemplate<const F: usize, const R: usize, const P: usize> {
-    fields: [FieldTemplate; F],
-    rivers: [(Position,Position); R],
-    starting_locations: [Position; P],
+    pub fields: [FieldTemplate; F],
+    pub rivers: [(Position,Position); R],
+    pub starting_locations: [HomeTemplate; P],
 }
 
 #[derive(Debug)]
 pub struct FieldTemplate {
-    position: Position,
-    tile: Tile,
-    tunnelable: bool,
-    explorer_token: bool,
+    pub position: Position,
+    pub tile: Tile,
+    pub tunnelable: bool,
+    pub explorer_token: bool,
+}
+
+#[derive(Debug)]
+pub struct HomeTemplate {
+    pub position: Position,
+    pub start1: Position,
+    pub start2: Position,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]

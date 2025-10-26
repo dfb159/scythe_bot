@@ -1,9 +1,9 @@
-use crate::{game::turnmask::TurnMask, game_state::PlayerState};
+use crate::{game_state::PlayerState, turn::turnmask::TurnMask};
 
-pub(crate) mod fcnn;
-pub(crate) mod human;
-pub(crate) mod random;
+pub mod fcnn;
+pub mod human;
+pub mod random;
 
-pub(crate) trait Agent {
+pub trait Agent {
     fn get_action(&mut self, state: &PlayerState) -> TurnMask;
 }

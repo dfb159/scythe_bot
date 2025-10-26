@@ -1,5 +1,5 @@
 use crate::{
-    campaign::SecondaryAction,
+    template::SecondaryAction,
     game::{
         turnhelper::{check_secondary_cost, map_primary, turn},
         turnmask::{

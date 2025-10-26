@@ -1,4 +1,4 @@
-use crate::{template::{CombatPower, FactionAbility, MobilityPower}, game::turnmask::Tile};
+use crate::{template::{CombatPower, FactionAbility, MobilityPower}, game::Tile};
 
 use super::Faction;
 

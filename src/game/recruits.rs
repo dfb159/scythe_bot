@@ -1,22 +1,28 @@
-use crate::game::turnmask::Recruit;
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+pub enum Recruit {
+    Popularity,
+    Power,
+    Card,
+    Coin,
+}
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct RecruitsState {
-    pub(crate) secondary_military_recruited: bool,
-    pub(crate) secondary_coin_recruited: bool,
-    pub(crate) secondary_popularity_recruited: bool,
-    pub(crate) secondary_card_recruited: bool,
+pub struct RecruitsState {
+    pub secondary_military_recruited: bool,
+    pub secondary_coin_recruited: bool,
+    pub secondary_popularity_recruited: bool,
+    pub secondary_card_recruited: bool,
 
-    pub(crate) onetime_military_recruited: bool,
-    pub(crate) onetime_coin_recruited: bool,
-    pub(crate) onetime_popularity_recruited: bool,
-    pub(crate) onetime_card_recruited: bool,
+    pub onetime_military_recruited: bool,
+    pub onetime_coin_recruited: bool,
+    pub onetime_popularity_recruited: bool,
+    pub onetime_card_recruited: bool,
 
-    pub(crate) star: bool,
+    pub star: bool,
 }
 
 impl RecruitsState {
-    pub(crate) fn new() -> RecruitsState {
+    pub fn new() -> RecruitsState {
         RecruitsState {
             secondary_military_recruited: false,
             secondary_coin_recruited: false,
@@ -32,7 +38,7 @@ impl RecruitsState {
         }
     }
 
-    pub(crate) fn recruit(&mut self, secondary: Recruit, onetime: Recruit) {
+    pub fn recruit(&mut self, secondary: Recruit, onetime: Recruit) {
         match secondary {
             Recruit::Power => {
                 self.secondary_military_recruited = true;
@@ -74,11 +80,11 @@ impl RecruitsState {
         }
     }
 
-    pub(crate) fn can_recruit(&self, secondary: Recruit, onetime: Recruit) -> bool {
+    pub fn can_recruit(&self, secondary: Recruit, onetime: Recruit) -> bool {
         !self.is_secondary_recruited(secondary) && !self.is_onetime_recruited(onetime)
     }
 
-    pub(crate) fn is_secondary_recruited(&self, secondary: Recruit) -> bool {
+    pub fn is_secondary_recruited(&self, secondary: Recruit) -> bool {
         match secondary {
             Recruit::Power => self.secondary_military_recruited,
             Recruit::Coin => self.secondary_coin_recruited,
@@ -87,7 +93,7 @@ impl RecruitsState {
         }
     }
 
-    pub(crate) fn is_onetime_recruited(&self, onetime: Recruit) -> bool {
+    pub fn is_onetime_recruited(&self, onetime: Recruit) -> bool {
         match onetime {
             Recruit::Power => self.onetime_military_recruited,
             Recruit::Coin => self.onetime_coin_recruited,
