@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{cmp::min, rc::Rc};
 
 use crate::{
     game::{
@@ -33,6 +33,7 @@ pub struct PlayerState {
 
     pub coins: u32,
     pub cards: u8, // TODO: change to actual BattleCards
+    pub combat_wins: u8,
 }
 
 #[derive(Debug, Clone)]
@@ -45,7 +46,6 @@ pub struct PlayerTemplate<'a> {
 pub type Territory = Vec<Rc<Field>>;
 
 impl PlayerState {
-    /// Creates a newgame [`PlayerState`] from the provided [`Player`], [`Faction`] and [`PlayerMat`] templates.
     pub fn new(
         template: &PlayerTemplate,
         home: &Rc<Field>,
@@ -73,26 +73,28 @@ impl PlayerState {
                 template.player_mat.starting_popularity + template.player.bonus_starting_popularity,
             ),
             production: production,
-
-            coins: template.player_mat.starting_coins + template.player.bonus_starting_coins,
-            cards: template.faction.starting_cards,
             character: CharacterEntity {
                 location: home.clone(),
             },
+
+            coins: template.player_mat.starting_coins + template.player.bonus_starting_coins,
+            cards: template.faction.starting_cards,
+            combat_wins: 0,
         }
     }
 
     pub fn stars(&self) -> u8 {
-        [
-            self.upgrades.star,
-            self.mechs.star,
-            self.buildings.star,
-            self.recruits.star,
-            self.military.star,
-            self.popularity.star,
-        ]
-        .iter()
-        .fold(0, |acc, &star| acc + if star { 1 } else { 0 })
+        let mut stars = 0;
+        if self.upgrades.star { stars += 1 }
+        if self.mechs.star { stars += 1 }
+        if self.buildings.star { stars += 1 }
+        if self.recruits.star { stars += 1 }
+        if self.production.star { stars += 1 }
+        // TODO Objectives
+        stars += min(self.combat_wins, 2);
+        if self.popularity.star { stars += 1 }
+        if self.military.star { stars += 1 }
+        stars
     }
 
     pub fn has_won(&self) -> bool {

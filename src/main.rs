@@ -2,7 +2,7 @@
 pub mod game;
 pub mod network;
 pub mod template;
-// pub mod turn;
+pub mod turn;
 
 // use agent::{
 //     human::{PriorityAgent, Step},
@@ -71,6 +71,8 @@ fn main() {
     };
 
     let mut game = Game::new(&NORMAL, [&player1, &player2, &player3]);
+    let x = game.players.get(1).unwrap();
+    println!("{x :#?}");
     // let mut agent = PriorityAgent {
     //     priority: vec![
     //         Step::Population,
