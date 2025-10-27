@@ -41,7 +41,16 @@ impl MechsState {
         self.mechs[mech as usize].is_some()
     }
 
-    pub fn get_mech(&self, mech: Mech) -> &Option<MechEntity> {
-        &self.mechs[mech as usize]
+    pub fn amount(&self, field: &Rc<Field>) -> u8 {
+        self.mechs.iter().fold(0, |acc, m| {
+            acc + match m {
+                Some(t) if Rc::ptr_eq(field, &t) => 1,
+                _ => 0,
+            }
+        })
+    }
+
+    pub fn get(&self, mech: Mech) -> Option<&MechEntity> {
+        self.mechs[mech as usize].as_ref()
     }
 }

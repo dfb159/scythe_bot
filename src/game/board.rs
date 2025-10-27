@@ -1,7 +1,7 @@
 use std::{collections::HashMap, ops::Add, rc::Rc};
 
 use crate::{
-    game::Tile,
+    game::{Resource, Tile},
     template::{BoardTemplate, Position},
 };
 
@@ -87,7 +87,7 @@ pub struct Field {
     pub resources: ResourceField,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Hash)]
 pub struct ResourceField {
     pub wood: u32,
     pub metal: u32,
@@ -98,6 +98,15 @@ pub struct ResourceField {
 impl ResourceField {
     pub fn total(&self) -> u32 {
         self.wood.saturating_add(self.metal).saturating_add(self.oil).saturating_add(self.food)
+    }
+
+    pub fn has(&self, resource: &Resource, amount: u32) -> bool {
+        match resource {
+            Resource::Wood => self.wood >= amount,
+            Resource::Metal => self.metal >= amount,
+            Resource::Oil => self.oil >= amount,
+            Resource::Food => self.food >= amount,
+        }
     }
 }
 

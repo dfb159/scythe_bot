@@ -44,16 +44,16 @@ impl ProductionState {
         }
     }
 
-    pub fn get(&self, tile: &Rc<Field>) -> u8 {
+    pub fn amount(&self, field: &Rc<Field>) -> u8 {
         self.workers.iter().fold(0, |acc, w| {
             acc + match w {
-                Some(t) if Rc::ptr_eq(tile, &t) => 1,
+                Some(t) if Rc::ptr_eq(field, &t) => 1,
                 _ => 0,
             }
         })
     }
 
-    pub fn get_worker(&self, worker: Worker) -> &Option<WorkerEntity> {
-        &self.workers[worker as usize]
+    pub fn get(&self, worker: Worker) -> Option<&WorkerEntity> {
+        self.workers[worker as usize].as_ref()
     }
 }

@@ -13,6 +13,7 @@ use crate::{
         upgrades::UpgradesState,
     },
     template::{Faction, Player, PlayerMat, PrimaryAction, SecondaryAction},
+    turn::mask::UnitPosition,
 };
 
 #[derive(Debug, Clone)]
@@ -85,15 +86,29 @@ impl PlayerState {
 
     pub fn stars(&self) -> u8 {
         let mut stars = 0;
-        if self.upgrades.star { stars += 1 }
-        if self.mechs.star { stars += 1 }
-        if self.buildings.star { stars += 1 }
-        if self.recruits.star { stars += 1 }
-        if self.production.star { stars += 1 }
+        if self.upgrades.star {
+            stars += 1
+        }
+        if self.mechs.star {
+            stars += 1
+        }
+        if self.buildings.star {
+            stars += 1
+        }
+        if self.recruits.star {
+            stars += 1
+        }
+        if self.production.star {
+            stars += 1
+        }
         // TODO Objectives
         stars += min(self.combat_wins, 2);
-        if self.popularity.star { stars += 1 }
-        if self.military.star { stars += 1 }
+        if self.popularity.star {
+            stars += 1
+        }
+        if self.military.star {
+            stars += 1
+        }
         stars
     }
 
@@ -108,7 +123,7 @@ impl PlayerState {
         fields[9..13].clone_from_slice(self.mechs.mechs.as_slice());
         fields[13].clone_from(&self.buildings.armory);
         fields[14].clone_from(&self.buildings.mill);
-        fields[15].clone_from(&self.buildings.mine);
+        fields[15].clone_from(&self.buildings.tunnel);
         fields[16].clone_from(&self.buildings.monument);
 
         // TODO buildings only count towards controlled territory, if no enemy unit is currently on that fields
@@ -198,5 +213,14 @@ impl PlayerState {
             return false;
         }
         true
+    }
+
+    pub fn get_unit_field(&self, unit: &UnitPosition) -> Option<&Rc<Field>> {
+        match unit {
+            UnitPosition::Character => Some(&self.character.location),
+            UnitPosition::Worker(worker) => self.production.get(*worker),
+            UnitPosition::Mech(mech) => self.mechs.get(*mech),
+            UnitPosition::Building(building) => self.buildings.get(*building),
+        }
     }
 }
