@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use crate::{
     game::{
-        Resource,
+        Resource, Tile,
         board::{Field, ResourceField},
         game::Game,
         mechs::Mech,
@@ -10,59 +10,48 @@ use crate::{
         production::Worker,
     },
     template::Position,
-    turn::mask::{MechMask, Move, Movement, Primary, Trade, TradeUnit, UnitMovement, WorkerMask},
+    turn::mask::{
+        MechMask, Move, Movement, Primary, Produce, Trade, TradeUnit, UnitMovement, WorkerMask,
+    },
 };
 
 pub type Reason = Option<&'static str>;
 
 pub fn check_primary(game: &Game, primary: &Primary) -> Reason {
+    let player = game.get_active_player();
     let mut history = History::new();
     match primary {
-        Primary::Move(Move::Move1(m)) => check_move(&game, &[m], &mut history),
-        Primary::Move(Move::Move2(m1, m2)) => check_move(&game, &[m1, m2], &mut history),
-        Primary::Move(Move::Move3(m1, m2, m3)) => {
-            match !game.get_active_player().upgrades.move_evolved {
-                true => Some("Move3 is not evolved"),
-                false => check_move(&game, &[m1, m2, m3], &mut history),
-            }
-        }
+        Primary::Move(Move::Move1(m)) => check_move(game, player, &[m], &mut history),
+        Primary::Move(Move::Move2(m1, m2)) => check_move(game, player, &[m1, m2], &mut history),
+        Primary::Move(Move::Move3(m1, m2, m3)) => (!player.upgrades.move_evolved)
+            .then_some("Move3 is not evolved")
+            .or_else(|| check_move(game, player, &[m1, m2, m3], &mut history)),
         Primary::Tax => None,
-        Primary::Trade(trade) => match game.get_active_player().coins >= 1 {
-            true => match trade {
+        Primary::Trade(trade) => (player.coins < 1)
+            .then_some("Not enough coins to trade")
+            .or_else(|| match trade {
                 Trade::Trade1(u) => check_trade1(game, u),
                 Trade::Trade2(u1, u2) => check_trade2(game, u1, u2),
-            },
-            false => Some("Not enough coins for trading"),
-        },
-        Primary::Promote => match game.get_active_player().coins >= 1 {
-            true => None,
-            false => Some("Not enough coins"),
-        },
-        Primary::Bolster => match game.get_active_player().coins >= 1 {
-            true => None,
-            false => Some("Not enough coins"),
-        },
-        Primary::Enforce => match game.get_active_player().coins >= 1 {
-            true => None,
-            false => Some("Not enough coins"),
-        },
-        Primary::Produce(Produce1(tile1)) => {
-            game.can_produce() && check_movement(&produce_game(), vec![tile1])
-        }
-        Primary::Produce(Produce2(tile1, tile2)) => {
-            game.can_produce() && check_movement(&produce_game(), vec![tile1, tile2])
-        }
-        Primary::Produce(Produce3(tile1, tile2, tile3)) => {
-            game.can_produce()
-                && game.upgrades.produce_evolved
-                && check_movement(&produce_game(), vec![tile1, tile2, tile3])
+            }),
+        Primary::Promote => (player.coins < 1).then_some("Not enough coins to promote"),
+        Primary::Bolster => (player.coins < 1).then_some("Not enough coins to bolster"),
+        Primary::Enforce => (player.coins < 1).then_some("Not enough coins to enforce"),
+        Primary::Produce(Produce::Produce1(tile1)) => check_produce(player, &[tile1]),
+        Primary::Produce(Produce::Produce2(tile1, tile2)) => check_produce(player, &[tile1, tile2]),
+        Primary::Produce(Produce::Produce3(tile1, tile2, tile3)) => {
+            (!player.upgrades.produce_evolved)
+                .then_some("Produce3 is not evolved")
+                .or_else(|| check_produce(player, &[tile1, tile2, tile3]))
         }
     }
 }
 
-pub fn check_move(game: &Game, movement: &[&UnitMovement], history: &mut History) -> Reason {
-    let player = game.get_active_player();
-
+pub fn check_move(
+    game: &Game,
+    player: &Rc<PlayerState>,
+    movement: &[&UnitMovement],
+    history: &mut History,
+) -> Reason {
     movement.iter().fold(None, |acc: Reason, &mov| {
         acc.or_else(|| match mov {
             UnitMovement::Character(m) => {
@@ -385,6 +374,32 @@ pub fn check_field_for_trade(
     } else {
         None
     }
+}
+
+const VALID_PRODUCTION_TILES: &[Tile] = &[
+    Tile::Farm,
+    Tile::Mountain,
+    Tile::Tundra,
+    Tile::Village,
+    Tile::Woods,
+];
+pub fn check_produce(player: &Rc<PlayerState>, prod: &[&Worker]) -> Reason {
+    let mut production: Vec<Rc<Field>> = Vec::new();
+    for worker in prod {
+        match player.production.get(**worker) {
+            Some(field) => {
+                if VALID_PRODUCTION_TILES.contains(&field.tile) {
+                    return Some("Cannot produce on unproducible tiles");
+                }
+                if production.iter().any(|f| Rc::ptr_eq(f, field)) {
+                    return Some("Cannot produce on the same tile multiple times");
+                }
+                production.push(field.clone());
+            }
+            None => return Some("Worker is not deployed and cant produce"),
+        }
+    }
+    None
 }
 
 pub fn check_secondary_cost(game: &Playergame, secondary: &SecondaryAction) -> bool {

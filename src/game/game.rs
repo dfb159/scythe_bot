@@ -58,12 +58,11 @@ impl Game {
         self.turn / self.players.len() as u32
     }
 
-    pub fn get_active_player(&self) -> Rc<PlayerState> {
+    pub fn get_active_player(&self) -> &Rc<PlayerState> {
         let index = self.turn as usize % self.players.len();
         self.players
             .get(index)
             .expect("Vector index should never be out of scope due to modulus")
-            .clone()
     }
 
     pub fn get_player_control(&self, field: &Rc<Field>) -> Option<&Rc<PlayerState>> {
