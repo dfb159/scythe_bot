@@ -70,7 +70,6 @@ pub type NormalMove = (Position, ResourceField);
 pub type MechMove = (Position, WorkerMask, ResourceField);
 
 bitflags! {
-    // Attributes can be applied to flags types
     #[repr(transparent)]
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
     pub struct WorkerMask: u8 {
@@ -85,6 +84,54 @@ bitflags! {
 
         // The source may set any bits
         const _ = !0;
+    }
+}
+
+impl WorkerMask {
+    pub fn contains_worker(&self, worker: Worker) -> bool {
+        self.contains(WorkerMask::get_worker(worker))
+    }
+
+    pub fn get_worker(worker: Worker) -> WorkerMask {
+        match worker {
+            Worker::First => WorkerMask::w1,
+            Worker::Second => WorkerMask::w2,
+            Worker::Third => WorkerMask::w3,
+            Worker::Fourth => WorkerMask::w4,
+            Worker::Fifth => WorkerMask::w5,
+            Worker::Sixth => WorkerMask::w6,
+            Worker::Seventh => WorkerMask::w7,
+            Worker::Eighth => WorkerMask::w8,
+        }
+    }
+}
+
+bitflags! {
+    #[repr(transparent)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    pub struct MechMask: u8 {
+        const m1 = 0b00000001;
+        const m2 = 0b00000010;
+        const m3 = 0b00000100;
+        const m4 = 0b00001000;
+
+        // The source may set any bits
+        const _ = !0;
+    }
+}
+
+impl MechMask {
+    pub fn contains_mech(&self, mech: Mech) -> bool {
+        self.contains(MechMask::get_mech(mech))
+    }
+
+    pub fn get_mech(mech: Mech) -> MechMask {
+        match mech {
+            Mech::First => MechMask::m1,
+            Mech::Second => MechMask::m2,
+            Mech::Third => MechMask::m3,
+            Mech::Fourth => MechMask::m4,
+        }
     }
 }
 

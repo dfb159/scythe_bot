@@ -1,5 +1,4 @@
 use crate::{
-    template::SecondaryAction,
     game::{
         turnhelper::{check_secondary_cost, map_primary, turn},
         turnmask::{
@@ -8,9 +7,10 @@ use crate::{
         },
     },
     game_state::PlayerState,
+    template::SecondaryAction,
 };
 
-use super::turnmask::{PrimaryUpgrade, Produce};
+use super::mask::{PrimaryUpgrade, Produce};
 
 pub fn get_actions(state: &PlayerState) -> Vec<TurnMask> {
     let mut actions = Vec::new();

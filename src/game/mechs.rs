@@ -1,6 +1,6 @@
-use std::rc::Rc;
+use std::{iter::zip, rc::Rc};
 
-use crate::game::board::Field;
+use crate::{game::board::Field, turn::mask::MechMask};
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum Mech {
@@ -52,5 +52,23 @@ impl MechsState {
 
     pub fn get(&self, mech: Mech) -> Option<&MechEntity> {
         self.mechs[mech as usize].as_ref()
+    }
+
+    pub fn get_deployed(&self) -> MechMask {
+        zip(self.mechs.iter(), [MechMask::all()]).fold(MechMask::empty(), |mask, (mech, m)| {
+            match mech {
+                Some(_) => mask | m, // if the mech is deployed
+                _ => mask,
+            }
+        })
+    }
+
+    pub fn at(&self, field: &Rc<Field>) -> MechMask {
+        zip(self.mechs.iter(), [MechMask::all()]).fold(MechMask::empty(), |mask, (mech, m)| {
+            match mech {
+                Some(f) if Rc::ptr_eq(field, &f) => mask | m, // if the mech is deployed and at this field
+                _ => mask,
+            }
+        })
     }
 }

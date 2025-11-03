@@ -1,4 +1,8 @@
-use std::{collections::HashMap, ops::Add, rc::Rc};
+use std::{
+    collections::HashMap,
+    ops::{Add, Sub},
+    rc::Rc,
+};
 
 use crate::{
     game::{Resource, Tile},
@@ -15,7 +19,7 @@ impl Board {
     pub fn from_template<const F: usize, const R: usize, const P: usize>(
         template: &BoardTemplate<F, R, P>,
     ) -> Self {
-        let mut fields = HashMap::with_capacity(F+P);
+        let mut fields = HashMap::with_capacity(F + P);
         for f in template.fields.iter() {
             let new_field = Rc::new(Field {
                 encounter_token: f.explorer_token,
@@ -66,8 +70,8 @@ impl Board {
         }
     }
 
-    pub fn get_field(&self, position: &Position) -> Option<Rc<Field>> {
-        self.fields.get(position).cloned()
+    pub fn get_field(&self, position: &Position) -> Option<&Rc<Field>> {
+        self.fields.get(position)
     }
 
     pub fn is_river(&self, from: &Field, to: &Field) -> bool {
@@ -96,8 +100,20 @@ pub struct ResourceField {
 }
 
 impl ResourceField {
+    pub fn empty() -> Self {
+        ResourceField {
+            wood: 0,
+            metal: 0,
+            oil: 0,
+            food: 0,
+        }
+    }
+
     pub fn total(&self) -> u32 {
-        self.wood.saturating_add(self.metal).saturating_add(self.oil).saturating_add(self.food)
+        self.wood
+            .saturating_add(self.metal)
+            .saturating_add(self.oil)
+            .saturating_add(self.food)
     }
 
     pub fn has(&self, resource: &Resource, amount: u32) -> bool {
@@ -107,6 +123,15 @@ impl ResourceField {
             Resource::Oil => self.oil >= amount,
             Resource::Food => self.food >= amount,
         }
+    }
+
+    pub fn checked_sub(self, rhs: Self) -> Option<Self> {
+        Some(ResourceField {
+            wood: self.wood.checked_sub(rhs.wood)?,
+            metal: self.metal.checked_sub(rhs.metal)?,
+            oil: self.oil.checked_sub(rhs.oil)?,
+            food: self.food.checked_sub(rhs.food)?,
+        })
     }
 }
 

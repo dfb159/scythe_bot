@@ -1,6 +1,6 @@
-use std::rc::Rc;
+use std::{iter::zip, rc::Rc};
 
-use crate::game::board::Field;
+use crate::{game::board::Field, turn::mask::WorkerMask};
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum Worker {
@@ -55,5 +55,25 @@ impl ProductionState {
 
     pub fn get(&self, worker: Worker) -> Option<&WorkerEntity> {
         self.workers[worker as usize].as_ref()
+    }
+
+    pub fn get_deployed(&self) -> WorkerMask {
+        zip(self.workers.iter(), [WorkerMask::all()]).fold(
+            WorkerMask::empty(),
+            |mask, (worker, m)| match worker {
+                Some(_) => mask | m, // if the worker is deployed
+                _ => mask,
+            },
+        )
+    }
+
+    pub fn at(&self, field: &Rc<Field>) -> WorkerMask {
+        zip(self.workers.iter(), [WorkerMask::all()]).fold(
+            WorkerMask::empty(),
+            |mask, (worker, m)| match worker {
+                Some(f) if Rc::ptr_eq(field, &f) => mask | m, // if the worker is deployed and at this field
+                _ => mask,
+            },
+        )
     }
 }
